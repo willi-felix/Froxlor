@@ -218,7 +218,7 @@ class PhpHelper
 		$data_files = [];
 		$has_data = false;
 
-		foreach ($configdirs as $data_dirname) {
+		foreach ($configdirs[0] as $data_dirname) {
 			if (is_dir($data_dirname)) {
 				$data_dirhandle = opendir($data_dirname);
 				while (false !== ($data_filename = readdir($data_dirhandle))) {

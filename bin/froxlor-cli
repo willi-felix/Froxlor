@@ -36,6 +36,7 @@ use Froxlor\Cli\InstallCommand;
 use Froxlor\Cli\MasterCron;
 use Froxlor\Cli\UserCommand;
 use Froxlor\Froxlor;
+use Froxlor\System\Plugin;
 
 // validate correct php version
 if (version_compare("7.4.0", PHP_VERSION, ">=")) {
@@ -59,4 +60,16 @@ $application->add(new UpdateCommand());
 $application->add(new InstallCommand());
 $application->add(new MasterCron());
 $application->add(new UserCommand());
+
+// check for plugin-defined CLI commmands
+$cliFiles = Plugin::getCliCommands();
+foreach ($cliFiles as $cliClass => $cliFile) {
+	if (file_exists($cliFile)) {
+		require $cliFile;
+		if (class_exists($cliClass)) {
+			$application->add(new $cliClass());
+		}
+	}
+}
+
 $application->run();

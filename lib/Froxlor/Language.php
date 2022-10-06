@@ -25,6 +25,7 @@
 
 namespace Froxlor;
 
+use Froxlor\System\Plugin;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
 
@@ -84,6 +85,7 @@ class Language
 	 * @TODO: Possible iso: de, de-DE, de-AT (fallback to de)
 	 *
 	 * @param $iso
+	 * @param $basedir
 	 * @return array
 	 */
 	private static function loadLanguage($iso): array
@@ -96,6 +98,17 @@ class Language
 
 		// load default language
 		$lng = require $languageFile;
+
+		// load from plugins
+		$pLngs = Plugin::getLanguageFolders();
+		foreach ($pLngs as $pLng) {
+			$languageFile = sprintf($pLng.'/%s.lng.php', $iso);
+			if (!file_exists($languageFile)) {
+				continue;
+			}
+			$lngEx = require $languageFile;
+			$lng = array_merge_recursive($lng, $lngEx);
+		}
 
 		// multidimensional array to dot notation keys
 		$reItIt = new RecursiveIteratorIterator(new RecursiveArrayIterator($lng));

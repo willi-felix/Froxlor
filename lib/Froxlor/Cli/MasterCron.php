@@ -32,6 +32,7 @@ use Froxlor\Settings;
 use Froxlor\FroxlorLogger;
 use Froxlor\Database\Database;
 use Froxlor\System\Cronjob;
+use Froxlor\System\Plugin;
 use Froxlor\Cron\TaskId;
 use Froxlor\Cron\CronConfig;
 use Froxlor\Cron\System\Extrausers;
@@ -208,12 +209,31 @@ final class MasterCron extends CliCommand
 	private function getCronModule(string $cronname, OutputInterface $output)
 	{
 		$upd_stmt = Database::prepare("
-			SELECT `cronclass` FROM `" . TABLE_PANEL_CRONRUNS . "` WHERE `cronfile` = :cron;
+			SELECT `module`, `cronclass` FROM `" . TABLE_PANEL_CRONRUNS . "` WHERE `cronfile` = :cron;
 		");
 		$cron = Database::pexecute_first($upd_stmt, [
 			'cron' => $cronname
 		]);
 		if ($cron) {
+			$vendor = explode("/", $cron['module'])[0];
+			$module = explode("/", $cron['module'])[1];
+			if ($vendor != 'froxlor') {
+				// vendor == plugin-folder name e.g. /plugins/myplugin leads to vendor = myplugin
+				$pluginPath = Froxlor::getInstallDir() . '/plugins/' . $vendor . '/plugin.json';
+				try {
+					$plugin = new Plugin($pluginPath);
+				} catch (Exception $e) {
+					$output->writeln("<error>" . $e->getMessage() . "</>");
+					return false;
+				}
+				$cronFiles = $plugin->getData('cron') ?? null;
+				if (!empty($cronFiles) && isset($cronFiles[$module]) && file_exists($plugin->getPluginPath() . '/' . ltrim($cronFiles[$module], "/"))) {
+					require_once $plugin->getPluginPath() . '/' . ltrim($cronFiles[$module], "/");
+				} else {
+					$output->writeln("<error>Cronfile for '" . $cron['module'] . "' could not be found. Be sure to define it in plugin.json</>");
+					return false;
+				}
+			}
 			return $cron['cronclass'];
 		}
 		$output->writeln("<error>Requested cronjob '" . $cronname . "' could not be found.</>");

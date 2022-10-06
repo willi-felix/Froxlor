@@ -492,6 +492,7 @@ return [
 			'verify_ca' => 'Enable verification of the server SSL certificate',
 		],
 		'settings_importfile' => 'Chose import file',
+		'plugins' => 'Plugins',
 	],
 	'apcuinfo' => [
 		'clearcache' => 'Clear APCu cache',
@@ -974,6 +975,7 @@ return [
 		'notallowedphpconfigused' => 'Trying to use php-config which is not assigned to customer',
 		'pathmustberelative' => 'The user does not have the permission to specify directories outside the customers home-directory. Please specify a relative path (no leading /).',
 		'mysqlserverstillhasdbs' => 'Cannot remove database server from customers allow-list as there are still databases on it.',
+		'pluginsdisabled' => 'Plugins are disabled',
 	],
 	'extras' => [
 		'description' => 'Here you can add some extras, for example directory protection.<br />The system will need some time to apply the new settings after every change.',
@@ -2337,5 +2339,18 @@ Yours sincerely, your administrator',
 		'title' => 'Welcome to froxlor!',
 		'config_note' => 'In order for froxlor to be able to communicate properly with the backend, you have to configure it.',
 		'config_now' => 'Configure now'
+	],
+	'plugins' => [
+		'title' => 'froxlor plugins',
+		'name' => 'Plugin name',
+		'version' => 'Version',
+		'author' => 'Author',
+		'is_installed' => 'installed',
+		'is_active' => 'activated',
+		'edit' => 'Manage plugin',
+		'install' => 'Install / uninstall',
+		'install_note' => 'Check to run installation.<br>If checked, the plugin is already installed and unchecking it will uninstall the plugin.',
+		'activate' => 'Activate / deactivate',
+		'activate_note' => 'Check to activate plugin.<br>If checked, the plugin is already activated and unchecking it will deactivate the plugin.',
 	],
 ];

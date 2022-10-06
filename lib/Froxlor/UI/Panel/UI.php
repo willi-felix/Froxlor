@@ -34,6 +34,7 @@ use Froxlor\FileDir;
 use Froxlor\Froxlor;
 use Froxlor\PhpHelper;
 use Froxlor\Settings;
+use Froxlor\System\Plugin;
 use Froxlor\UI\Linker;
 use Twig\Environment;
 use Twig\Extension\DebugExtension;
@@ -163,6 +164,10 @@ class UI
 		self::$install_mode = $install_mode;
 		// init twig template engine
 		$loader = new FilesystemLoader(Froxlor::getInstallDir() . '/templates/');
+		$plugin_paths = Plugin::getTemplateFolders();
+		foreach ($plugin_paths as $ppath) {
+			$loader->addPath($ppath);
+		}
 		$twig_params = [
 			'auto_reload' => true,
 			'debug' => false,

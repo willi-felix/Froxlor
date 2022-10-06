@@ -31,6 +31,7 @@ use Froxlor\FroxlorLogger;
 use Froxlor\PhpHelper;
 use Froxlor\Settings;
 use Froxlor\System\Cronjob;
+use Froxlor\System\Plugin;
 use Froxlor\UI\Form;
 use Froxlor\UI\HTML;
 use Froxlor\UI\Listing;
@@ -50,7 +51,9 @@ $sql_root = Database::getSqlData();
 Database::needRoot(false);
 
 if ($page == 'overview' && $userinfo['change_serversettings'] == '1') {
-	$settings_data = PhpHelper::loadConfigArrayDir('./actions/admin/settings/');
+	$settings_arrays = Plugin::getSettingsArrays();
+	array_unshift($settings_arrays, './actions/admin/settings/');
+	$settings_data = PhpHelper::loadConfigArrayDir($settings_arrays);
 	Settings::loadSettingsInto($settings_data);
 
 	if (isset($_POST['send']) && $_POST['send'] == 'send') {

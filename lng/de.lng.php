@@ -907,6 +907,7 @@ return [
 		'notallowedphpconfigused' => 'Nutzung einer PHP-Konfiguration welche nicht dem Kunden zugeordnet ist',
 		'pathmustberelative' => 'Der Benutzer hat nicht die benötigten Berechtigungen, um Pfade außerhalb des Kunden-Heimatverzeichnisses anzugeben. Bitte einen relativen Pfad angeben (kein führendes /).',
 		'mysqlserverstillhasdbs' => 'Datenbank-Server kann für den Kunden nicht entfernt werden, da sich dort noch Datenbanken befinden.',
+		'pluginsdisabled' => 'Plugins sind deaktiviert',
 	],
 	'extras' => [
 		'description' => 'Hier können Sie zusätzliche Extras einrichten, wie zum Beispiel einen Verzeichnisschutz.<br />Die Änderungen sind erst nach einer kurzen Zeit wirksam.',
@@ -2210,5 +2211,16 @@ Vielen Dank, Ihr Administrator',
 		'title' => 'Willkommen bei froxlor!',
 		'config_note' => 'Damit froxlor mit dem Backend vernünftig kommunizieren kann, musst du dieses noch konfigurieren.',
 		'config_now' => 'Jetzt konfigurieren'
+	],
+	'plugin' => [
+		'title' => 'froxlor Plugins',
+		'name' => 'Plugin Name',
+		'is_installed' => 'installiert',
+		'is_active' => 'aktiviert',
+		'edit' => 'Plugin verwalten',
+		'install' => 'Installieren / Deinstallieren',
+		'install_note' => 'Häkchen setzen zum Installieren.<br>Wenn gesetzt ist das Plugin bereits installiert; Häkchen entfernen deinstalliert es.',
+		'activate' => 'Aktivieren / Deaktivieren',
+		'activate_note' => 'Häkchen setzen zum Aktivieren.<br>Wenn gesetzt ist das Plugin bereits aktiviert; Häkchen entfernen deaktiviert es.',
 	],
 ];

@@ -40,6 +40,7 @@ use Froxlor\Froxlor;
 use Froxlor\PhpHelper;
 use Froxlor\Settings;
 use Froxlor\UI\Collection;
+use Froxlor\System\Plugin;
 
 class GlobalSearch
 {
@@ -61,7 +62,9 @@ class GlobalSearch
 						break;
 					}
 				}
-				$settings_data = PhpHelper::loadConfigArrayDir(Froxlor::getInstallDir() . '/actions/admin/settings/');
+				$settings_arrays = Plugin::getSettingsArrays();
+				array_unshift($settings_arrays, Froxlor::getInstallDir() . '/actions/admin/settings/');
+				$settings_data = PhpHelper::loadConfigArrayDir($settings_arrays);
 				$results = [];
 				if (!isset($processed['settings'])) {
 					$processed['settings'] = [];

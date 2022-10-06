@@ -242,6 +242,12 @@ return [
 					'required_resources' => 'change_serversettings'
 				],
 				[
+					'url' => 'admin_plugins.php?page=overview',
+					'label' => lng('admin.plugins'),
+					'required_resources' => 'change_serversettings',
+					'show_element' => Settings::Config('enable_plugins')
+				],
+				[
 					'url' => 'admin_autoupdate.php?page=overview',
 					'label' => lng('admin.autoupdate'),
 					'required_resources' => 'change_serversettings',

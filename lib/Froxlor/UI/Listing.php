@@ -66,10 +66,12 @@ class Listing
 				'th' => self::generateTableHeadings($tabellisting),
 				'tr' => self::generateTableRows($collection['data'], $tabellisting),
 			],
-			'pagination' => $collection['pagination'],
+			'pagination' => $collection['pagination'] ?? [],
 			'empty_msg' => $tabellisting['empty_msg'] ?? null,
+			'total_entries' => count($collection['data']),
 			'self_overview' => $tabellisting['self_overview'] ?? [],
-			'available_columns' => self::getAvailableColumnsForListing($tabellisting)
+			'available_columns' => self::getAvailableColumnsForListing($tabellisting),
+			'no_search' => $collection['no_search'] ?? false,
 		];
 	}
 

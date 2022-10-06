@@ -63,6 +63,7 @@ use Froxlor\UI\Panel\UI;
 use Froxlor\UI\Request;
 use Froxlor\UI\Response;
 use Froxlor\Install\Update;
+use Froxlor\System\Plugin;
 
 // include MySQL-tabledefinitions
 require Froxlor::getInstallDir() . '/lib/tables.inc.php';
@@ -264,7 +265,9 @@ if (AREA == 'admin' || AREA == 'customer') {
 		];
 		$navigation = HTML::buildNavigation($navigation_data['admin'], CurrentUser::getData());
 	} else {
-		$navigation_data = PhpHelper::loadConfigArrayDir('lib/navigation/');
+		$navdirs = Plugin::getNavigationArrays();
+		array_unshift($navdirs, 'lib/navigation/');
+		$navigation_data = PhpHelper::loadConfigArrayDir($navdirs);
 		$navigation = HTML::buildNavigation($navigation_data[AREA], CurrentUser::getData());
 	}
 }
@@ -296,6 +299,7 @@ unset($css);
 
 $action = Request::get('action');
 $page = Request::get('page', 'overview');
+$gSearchText = Request::get('searchtext');
 
 // clear request data
 if (!$action && isset($_SESSION)) {
@@ -305,6 +309,7 @@ if (!$action && isset($_SESSION)) {
 UI::twig()->addGlobal('action', $action);
 UI::twig()->addGlobal('page', $page);
 UI::twig()->addGlobal('area', AREA);
+UI::twig()->addGlobal('gSearchText', $gSearchText);
 
 /**
  * Initialize the mailingsystem
