@@ -415,19 +415,33 @@ class Store
 				}
 
 				// Make sure mime-type matches an image
-				if (!in_array(mime_content_type($_FILES[$fieldname]['tmp_name']), [
-					'image/jpeg',
-					'image/jpg',
-					'image/png',
-					'image/gif'
-				])) {
-					throw new Exception("Uploaded file not a valid image");
+				if (function_exists('finfo_open')) {
+					$finfo = finfo_open(FILEINFO_MIME_TYPE);
+					$mimetype = finfo_file($finfo, $_FILES[$fieldname]['tmp_name']);
+					finfo_close($finfo);
+				} else {
+					$mimetype = mime_content_type($_FILES[$fieldname]['tmp_name']);
+				}
+				if (empty($mimetype)) {
+					$mimetype = 'application/octet-stream';
+				}
+				if (!in_array($mimetype, ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'])) {
+					throw new \Exception("Uploaded file is not a valid image");
 				}
 
 				// Determine file extension
 				$spl = explode('.', $_FILES[$fieldname]['name']);
 				$file_extension = strtolower(array_pop($spl));
 				unset($spl);
+
+				if (!in_array($file_extension, [
+					'jpeg',
+					'jpg',
+					'png',
+					'gif'
+				])) {
+					throw new Exception("Invalid file-extension, use one of: jpeg, jpg, png, gif");
+				}
 
 				// Move file
 				if (!move_uploaded_file($_FILES[$fieldname]['tmp_name'], $path . $fielddata['image_name'] . '.' . $file_extension)) {
@@ -468,5 +482,32 @@ class Store
 			return substr($value, 1, -1);
 		}
 		return $value;
+	}
+
+	public static function storeSettingUpdateTrafficTool($fieldname, $fielddata, $newfieldvalue)
+	{
+		$returnvalue = self::storeSettingField($fieldname, $fielddata, $newfieldvalue);
+
+		if ($returnvalue !== false && is_array($fielddata) && isset($fielddata['settinggroup']) && $fielddata['settinggroup'] == 'system' && isset($fielddata['varname']) && $fielddata['varname'] == 'traffictool' && $newfieldvalue != $fielddata['value']) {
+			$oldpath = '/' . $fielddata['value'] . '/';
+			$newpath = '/' . $newfieldvalue . '/';
+			$sel_stmt = Database::prepare("SELECT * FROM `" . TABLE_PANEL_HTPASSWDS . "` WHERE `path` LIKE :oldpath");
+			$upd_stmt = Database::prepare("
+				UPDATE `" . TABLE_PANEL_HTPASSWDS . "` SET `path` = :newpath WHERE `id` = :id
+			");
+			Database::pexecute($sel_stmt, [
+				'oldpath' => '%' . $oldpath
+			]);
+			while ($entry = $sel_stmt->fetch(\PDO::FETCH_ASSOC)) {
+				$full_path = str_replace($oldpath, $newpath, $entry['path']);
+				$eid = (int)$entry['id'];
+				Database::pexecute($upd_stmt, [
+					'newpath' => $full_path,
+					'id' => $eid
+				]);
+			}
+		}
+
+		return $returnvalue;
 	}
 }

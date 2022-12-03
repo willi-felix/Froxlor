@@ -393,10 +393,8 @@ class Core
 			$this->updateSetting($upd_stmt, 'apache2', 'system', 'webserver');
 			$this->updateSetting($upd_stmt, '1', 'system', 'apache24');
 		} elseif ($this->validatedData['webserver'] == "lighttpd") {
-			$this->updateSetting($upd_stmt, '/etc/lighttpd/lighttpd.pem', 'system', 'ssl_cert_file');
 			$this->updateSetting($upd_stmt, '/var/run/lighttpd/', 'phpfpm', 'fastcgi_ipcdir');
 		} elseif ($this->validatedData['webserver'] == "nginx") {
-			$this->updateSetting($upd_stmt, '/etc/nginx/nginx.pem', 'system', 'ssl_cert_file');
 			$this->updateSetting($upd_stmt, '/var/run/', 'phpfpm', 'fastcgi_ipcdir');
 			$this->updateSetting($upd_stmt, 'error', 'system', 'errorlog_level');
 		}
@@ -661,7 +659,7 @@ class Core
 
 	private function createJsonArray()
 	{
-		$system_params = ["cron", "libnssextrausers", "logrotate"];
+		$system_params = ["cron", "libnssextrausers", "logrotate", "goaccess"];
 		if ($this->validatedData['webserver_backend'] == 'php-fpm') {
 			$system_params[] = 'php-fpm';
 		} elseif ($this->validatedData['webserver_backend'] == 'fcgid') {

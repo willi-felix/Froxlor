@@ -34,6 +34,7 @@ use Froxlor\Database\Database;
 use Froxlor\FileDir;
 use Froxlor\Froxlor;
 use Froxlor\Http\HttpClient;
+use Froxlor\Install\Update;
 use Froxlor\Settings;
 use Froxlor\UI\Listing;
 use Froxlor\UI\Panel\UI;
@@ -120,22 +121,32 @@ class Ajax
 
 		// Check for simplexml_load_file
 		if (!function_exists("simplexml_load_file")) {
-			return $this->errorResponse(
+			return $this->errorResponse([
 				"Newsfeed not available due to missing php-simplexml extension",
 				"Please install the php-simplexml extension in order to view our newsfeed."
-			);
+			]);
 		}
 
 		// Check for curl_version
 		if (!function_exists('curl_version')) {
-			return $this->errorResponse(
+			return $this->errorResponse([
 				"Newsfeed not available due to missing php-curl extension",
 				"Please install the php-curl extension in order to view our newsfeed."
-			);
+			]);
 		}
 
 		$output = HttpClient::urlGet($feed);
 		$news = simplexml_load_string(trim($output));
+
+		if ($news === false) {
+			$err = [];
+			foreach(libxml_get_errors() as $error) {
+				$err[] = $error->message;
+			}
+			return $this->errorResponse(
+				$err
+			);
+		}
 
 		// Handle items
 		if ($news) {
@@ -183,8 +194,14 @@ class Ajax
 		try {
 			$json_result = \Froxlor\Api\Commands\Froxlor::getLocal($this->userinfo)->checkUpdate();
 			$result = json_decode($json_result, true)['data'];
-			$result = UI::twig()->render($this->theme . '/misc/version_top.html.twig', $result);
-			return $this->jsonResponse($result);
+			$result['full_version'] = Froxlor::getFullVersion();
+			$result['dbversion'] = Froxlor::DBVERSION;
+			$uc_data = Update::getUpdateCheckData();
+			$result['last_update_check'] = $uc_data['ts'];
+			$result['channel'] = Settings::Get('system.update_channel');
+
+			$result_rendered = UI::twig()->render($this->theme . '/misc/version_top.html.twig', $result);
+			return $this->jsonResponse($result_rendered);
 		} catch (Exception $e) {
 			// don't display anything if just not allowed due to permissions
 			if ($e->getCode() != 403) {
@@ -219,11 +236,14 @@ class Ajax
 	private function updateTablelisting()
 	{
 		$columns = [];
-		foreach (Request::get('columns') as $value) {
+		foreach ((Request::get('columns') ?? []) as $value) {
 			$columns[] = $value;
 		}
-		Listing::storeColumnListingForUser([Request::get('listing') => $columns]);
-		return $this->jsonResponse($columns);
+		if (!empty($columns)) {
+			Listing::storeColumnListingForUser([Request::get('listing') => $columns]);
+			return $this->jsonResponse($columns);
+		}
+		return $this->errorResponse('At least one column must be selected', 406);
 	}
 
 	private function resetTablelisting()
@@ -237,6 +257,10 @@ class Ajax
 		$keyid = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 		$allowed_from = isset($_POST['allowed_from']) ? $_POST['allowed_from'] : "";
 		$valid_until = isset($_POST['valid_until']) ? $_POST['valid_until'] : "";
+
+		if (empty($keyid)) {
+			return $this->errorResponse('Invalid call', 406);
+		}
 
 		// validate allowed_from
 		if (!empty($allowed_from)) {

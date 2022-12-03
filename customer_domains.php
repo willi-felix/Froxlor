@@ -40,6 +40,7 @@ use Froxlor\UI\Panel\UI;
 use Froxlor\UI\Request;
 use Froxlor\UI\Response;
 use Froxlor\Validate\Validate;
+use Froxlor\CurrentUser;
 
 // redirect if this customer page is hidden via settings
 if (Settings::IsInList('panel.customer_hide_options', 'domains')) {
@@ -64,7 +65,7 @@ if ($page == 'overview' || $page == 'domains') {
 		}
 
 		$actions_links = false;
-		if (($userinfo['subdomains_used'] < $userinfo['subdomains'] || $userinfo['subdomains'] == '-1') && $parentDomainCollection->count() != 0) {
+		if (CurrentUser::canAddResource('subdomains')) {
 			$actions_links = [
 				[
 					'href' => $linker->getLink(['section' => 'domains', 'page' => 'domains', 'action' => 'add']),
@@ -180,7 +181,8 @@ if ($page == 'overview' || $page == 'domains') {
 
 				$openbasedir = [
 					0 => lng('domain.docroot'),
-					1 => lng('domain.homedir')
+					1 => lng('domain.homedir'),
+					2 => lng('domain.docparent')
 				];
 				$pathSelect = FileDir::makePathfield($userinfo['documentroot'], $userinfo['guid'], $userinfo['guid']);
 
@@ -221,6 +223,11 @@ if ($page == 'overview' || $page == 'domains') {
 		$result = json_decode($json_result, true)['data'];
 
 		if (isset($result['customerid']) && $result['customerid'] == $userinfo['customerid']) {
+
+			if ((int) $result['caneditdomain'] == 0) {
+				Response::standardError('domaincannotbeedited', $result['domain']);
+			}
+
 			if (isset($_POST['send']) && $_POST['send'] == 'send') {
 				try {
 					SubDomains::getLocal($userinfo, $_POST)->update();
@@ -301,7 +308,8 @@ if ($page == 'overview' || $page == 'domains') {
 
 				$openbasedir = [
 					0 => lng('domain.docroot'),
-					1 => lng('domain.homedir')
+					1 => lng('domain.homedir'),
+					2 => lng('domain.docparent')
 				];
 
 				// create serveralias options

@@ -163,17 +163,6 @@ return [
 						'select_var' => $serveraliasoptions,
 						'selected' => $result['iswildcarddomain'] == '1' ? 0 : ($result['wwwserveralias'] == '1' ? 1 : 2)
 					],
-					'speciallogfile' => [
-						'label' => lng('admin.speciallogfile.title'),
-						'desc' => lng('admin.speciallogfile.description'),
-						'type' => 'checkbox',
-						'value' => '1',
-						'checked' => $result['speciallogfile']
-					],
-					'speciallogverified' => [
-						'type' => 'hidden',
-						'value' => '0'
-					],
 					'specialsettings' => [
 						'visible' => $userinfo['change_serversettings'] == '1',
 						'label' => lng('admin.ownvhostsettings'),
@@ -212,7 +201,18 @@ return [
 						'type' => 'checkbox',
 						'value' => '1',
 						'checked' => $result['writeerrorlog']
-					]
+					],
+					'speciallogfile' => [
+						'label' => lng('admin.speciallogfile.title'),
+						'desc' => lng('admin.speciallogfile.description'),
+						'type' => 'checkbox',
+						'value' => '1',
+						'checked' => $result['speciallogfile']
+					],
+					'speciallogverified' => [
+						'type' => 'hidden',
+						'value' => '0'
+					],
 				]
 			],
 			'section_bssl' => [
@@ -430,13 +430,13 @@ return [
 				'visible' => Settings::Get('system.bind_enable') == '1' && $userinfo['change_serversettings'] == '1',
 				'fields' => [
 					'isbinddomain' => [
-						'label' => 'Nameserver',
+						'label' => lng('admin.createzonefile'),
 						'type' => 'checkbox',
 						'value' => '1',
 						'checked' => $result['isbinddomain']
 					],
 					'zonefile' => [
-						'label' => 'Zonefile',
+						'label' => lng('admin.custombindzone'),
 						'desc' => lng('admin.bindzonewarning'),
 						'type' => 'text',
 						'value' => $result['zonefile']

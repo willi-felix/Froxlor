@@ -48,8 +48,6 @@
 						<command><![CDATA[chmod 0600 {{settings.system.apacheconf_diroptions}}]]></command>
 						<command><![CDATA[mkdir -p {{settings.system.documentroot_prefix}}]]></command>
 						<command><![CDATA[mkdir -p {{settings.system.logfiles_directory}}]]></command>
-						<command><![CDATA[mkdir -p {{settings.system.mod_fcgid_tmpdir}}]]></command>
-						<command><![CDATA[chmod 1777 {{settings.system.mod_fcgid_tmpdir}}]]></command>
 						<command>
 							<visibility mode="notempty">{{settings.system.deactivateddocroot}}
 							</visibility>
@@ -1477,7 +1475,7 @@ user = <SQL_UNPRIVILEGED_USER>
 password = <SQL_UNPRIVILEGED_PASSWORD>
 dbname = <SQL_DB>
 hosts = <SQL_HOST>
-query = SELECT destination FROM mail_virtual AS v, panel_customers AS c WHERE c.customerid = v.customerid AND c.deactivated = 0 AND v.email = '%s' AND trim(v.destination) <> '' 
+query = SELECT destination FROM mail_virtual AS v, panel_customers AS c WHERE c.customerid = v.customerid AND c.deactivated = 0 AND v.email = '%s' AND trim(v.destination) <> ''
 ]]>
 							</content>
 						</file>
@@ -1646,7 +1644,7 @@ data_directory = /var/lib/postfix
 #default_privs = nobody
 
 # INTERNET HOST AND DOMAIN NAMES
-# 
+#
 # The myhostname parameter specifies the internet hostname of this
 # mail system. The default is to use the fully-qualified domain name
 # from gethostname(). $myhostname is used as a default value for many
@@ -1672,7 +1670,7 @@ myhostname = mail.$mydomain
 mydomain = <SERVERNAME>
 
 # SENDING MAIL
-# 
+#
 # The myorigin parameter specifies the domain that locally-posted
 # mail appears to come from. The default is to append $myhostname,
 # which is fine for small sites.  If you run a domain with multiple
@@ -1774,7 +1772,7 @@ mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
 #
 # - You define $mydestination domain recipients in files other than
 #   /etc/passwd, /etc/aliases, or the $virtual_alias_maps files.
-#   For example, you define $mydestination domain recipients in    
+#   For example, you define $mydestination domain recipients in
 #   the $virtual_mailbox_maps files.
 #
 # - You redefine the local delivery agent in master.cf.
@@ -1794,7 +1792,7 @@ mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
 # The right-hand side of the lookup tables is conveniently ignored.
 # In the left-hand side, specify a bare username, an @domain.tld
 # wild-card, or specify a user@domain.tld address.
-# 
+#
 #local_recipient_maps = unix:passwd.byname $alias_maps
 #local_recipient_maps = proxy:unix:passwd.byname $alias_maps
 #local_recipient_maps =
@@ -1826,16 +1824,16 @@ unknown_local_recipient_reject_code = 550
 # clients in the same IP subnetworks as the local machine.
 # On Linux, this does works correctly only with interfaces specified
 # with the "ifconfig" command.
-# 
+#
 # Specify "mynetworks_style = class" when Postfix should "trust" SMTP
 # clients in the same IP class A/B/C networks as the local machine.
 # Don't do this with a dialup site - it would cause Postfix to "trust"
 # your entire provider's network.  Instead, specify an explicit
 # mynetworks list by hand, as described below.
-#  
+#
 # Specify "mynetworks_style = host" when Postfix should "trust"
 # only the local machine.
-# 
+#
 #mynetworks_style = class
 #mynetworks_style = subnet
 #mynetworks_style = host
@@ -1865,7 +1863,7 @@ mynetworks = 127.0.0.0/8
 # - from "untrusted" clients to destinations that match $relay_domains or
 #   subdomains thereof, except addresses with sender-specified routing.
 # The default relay_domains value is $mydestination.
-# 
+#
 # In addition to the above, the Postfix SMTP server by default accepts mail
 # that Postfix is final destination for:
 # - destinations that match $inet_interfaces or $proxy_interfaces,
@@ -1873,7 +1871,7 @@ mynetworks = 127.0.0.0/8
 # - destinations that match $virtual_alias_domains,
 # - destinations that match $virtual_mailbox_domains.
 # These destinations do not need to be listed in $relay_domains.
-# 
+#
 # Specify a list of hosts or domains, /file/name patterns or type:name
 # lookup tables, separated by commas and/or whitespace.  Continue
 # long lines by starting the next line with whitespace. A file name
@@ -1918,7 +1916,7 @@ mynetworks = 127.0.0.0/8
 # The right-hand side of the lookup tables is conveniently ignored.
 # In the left-hand side, specify an @domain.tld wild-card, or specify
 # a user@domain.tld address.
-# 
+#
 #relay_recipient_maps = hash:/etc/postfix/relay_recipients
 
 # INPUT RATE CONTROL
@@ -1927,15 +1925,15 @@ mynetworks = 127.0.0.0/8
 # flow control. This feature is turned on by default, although it
 # still needs further development (it's disabled on SCO UNIX due
 # to an SCO bug).
-# 
+#
 # A Postfix process will pause for $in_flow_delay seconds before
 # accepting a new message, when the message arrival rate exceeds the
 # message delivery rate. With the default 100 SMTP server process
 # limit, this limits the mail inflow to 100 messages a second more
 # than the number of messages delivered per second.
-# 
+#
 # Specify 0 to disable the feature. Valid delays are 0..10.
-# 
+#
 #in_flow_delay = 1s
 
 # ADDRESS REWRITING
@@ -1965,7 +1963,7 @@ mynetworks = 127.0.0.0/8
 # On systems with NIS, the default is to search the local alias
 # database, then the NIS alias database. See aliases(5) for syntax
 # details.
-# 
+#
 # If you change the alias database, run "postalias /etc/aliases" (or
 # wherever your system stores the mail alias file), or simply run
 # "newaliases" to build the necessary DBM or DB file.
@@ -2008,7 +2006,7 @@ mynetworks = 127.0.0.0/8
 #
 #home_mailbox = Mailbox
 #home_mailbox = Maildir/
- 
+
 # The mail_spool_directory parameter specifies the directory where
 # UNIX-style mailboxes are kept. The default setting depends on the
 # system type.
@@ -2050,7 +2048,7 @@ mailbox_command = /usr/lib/dovecot/deliver
 #
 # NOTE: if you use this feature for accounts not in the UNIX password
 # file, then you must update the "local_recipient_maps" setting in
-# the main.cf file, otherwise the SMTP server will reject mail for    
+# the main.cf file, otherwise the SMTP server will reject mail for
 # non-UNIX accounts with "User unknown in local recipient table".
 #
 # Cyrus IMAP over LMTP. Specify ``lmtpunix      cmd="lmtpd"
@@ -2072,7 +2070,7 @@ mailbox_command = /usr/lib/dovecot/deliver
 #
 # NOTE: if you use this feature for accounts not in the UNIX password
 # file, then you must update the "local_recipient_maps" setting in
-# the main.cf file, otherwise the SMTP server will reject mail for    
+# the main.cf file, otherwise the SMTP server will reject mail for
 # non-UNIX accounts with "User unknown in local recipient table".
 #
 #fallback_transport = lmtp:unix:/file/name
@@ -2095,15 +2093,15 @@ mailbox_command = /usr/lib/dovecot/deliver
 #
 # NOTE: if you use this feature for accounts not in the UNIX password
 # file, then you must specify "local_recipient_maps =" (i.e. empty) in
-# the main.cf file, otherwise the SMTP server will reject mail for    
+# the main.cf file, otherwise the SMTP server will reject mail for
 # non-UNIX accounts with "User unknown in local recipient table".
 #
 #luser_relay = $user@other.host
 #luser_relay = $local@other.host
 #luser_relay = admin+$local
-  
+
 # JUNK MAIL CONTROLS
-# 
+#
 # The controls listed here are only a very small subset. The file
 # SMTPD_ACCESS_README provides an overview.
 
@@ -2125,11 +2123,11 @@ mailbox_command = /usr/lib/dovecot/deliver
 # deferred mail, so that mail can be flushed quickly with the SMTP
 # "ETRN domain.tld" command, or by executing "sendmail -qRdomain.tld".
 # See the ETRN_README document for a detailed description.
-# 
+#
 # The fast_flush_domains parameter controls what destinations are
 # eligible for this service. By default, they are all domains that
 # this server is willing to relay mail to.
-# 
+#
 #fast_flush_domains = $relay_domains
 
 # SHOW SOFTWARE VERSION OR NOT
@@ -2155,7 +2153,7 @@ smtpd_banner = $myhostname ESMTP $mail_name (Debian/GNU)
 # too many are run at the same time. With SMTP deliveries, 10
 # simultaneous connections to the same domain could be sufficient to
 # raise eyebrows.
-# 
+#
 # Each message delivery transport has its XXX_destination_concurrency_limit
 # parameter.  The default is $default_destination_concurrency_limit for
 # most delivery transports. For the local delivery agent the default is 2.
@@ -2213,11 +2211,11 @@ debugger_command =
 # INSTALL-TIME CONFIGURATION INFORMATION
 #
 # The following parameters are used when installing a new Postfix version.
-# 
+#
 # sendmail_path: The full pathname of the Postfix sendmail command.
 # This is the Sendmail-compatible mail posting interface.
-# 
-sendmail_path = /usr/sbin/sendmail 
+#
+sendmail_path = /usr/sbin/sendmail
 
 # newaliases_path: The full pathname of the Postfix newaliases command.
 # This is the Sendmail-compatible command to build alias databases.
@@ -2226,7 +2224,7 @@ newaliases_path = /usr/bin/newaliases
 
 # mailq_path: The full pathname of the Postfix mailq command.  This
 # is the Sendmail-compatible mail queue listing command.
-# 
+#
 mailq_path = /usr/bin/mailq
 
 # setgid_group: The group for mail submission and queue management
@@ -2308,15 +2306,18 @@ virtual_mailbox_limit = 0
 ### TLS settings
 ###
 ## TLS for outgoing mails from the server to another server
-#smtp_tls_security_level = may
-#smtp_tls_note_starttls_offer = yes
+smtp_tls_security_level = may
+smtp_tls_note_starttls_offer = yes
 ## TLS for incoming connections (clients or other mail servers)
-#smtpd_tls_security_level = may
-#smtpd_tls_cert_file = /etc/ssl/server/<SERVERNAME>.pem
-#smtpd_tls_key_file = $smtpd_tls_cert_file
+smtpd_tls_security_level = may
+smtpd_tls_cert_file = <SSL_CERT_FILE>
+smtpd_tls_key_file = <SSL_KEY_FILE>
 #smtpd_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
-#smtpd_tls_loglevel = 1
-#smtpd_tls_received_header = yes
+smtpd_tls_loglevel = 1
+smtpd_tls_received_header = yes
+smtp_use_tls = yes
+smtpd_use_tls = yes
+smtpd_tls_session_cache_timeout = 3600s
 ]]>
 						</content>
 					</file>
@@ -2335,35 +2336,37 @@ virtual_mailbox_limit = 0
 # service type  private unpriv  chroot  wakeup  maxproc command + args
 #               (yes)   (yes)   (yes)   (never) (100)
 # ==========================================================================
-smtp      inet  n       -       y       -       -       smtpd
-#smtp      inet  n       -       y       -       1       postscreen
-#smtpd     pass  -       -       y       -       -       smtpd
-#dnsblog   unix  -       -       y       -       0       dnsblog
-#tlsproxy  unix  -       -       y       -       0       tlsproxy
-#submission inet n       -       y       -       -       smtpd
-#  -o syslog_name=postfix/submission
-#  -o smtpd_tls_security_level=encrypt
-#  -o smtpd_sasl_auth_enable=yes
-#  -o smtpd_reject_unlisted_recipient=no
+#smtp      inet  n       -       y       -       -       smtpd
+smtp      inet  n       -       y       -       1       postscreen
+smtpd     pass  -       -       y       -       -       smtpd
+dnsblog   unix  -       -       y       -       0       dnsblog
+tlsproxy  unix  -       -       y       -       0       tlsproxy
+submission inet n       -       y       -       -       smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_reject_unlisted_recipient=no
 #  -o smtpd_client_restrictions=$mua_client_restrictions
 #  -o smtpd_helo_restrictions=$mua_helo_restrictions
 #  -o smtpd_sender_restrictions=$mua_sender_restrictions
 #  -o smtpd_recipient_restrictions=
-#  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
-#  -o milter_macro_daemon_name=ORIGINATING
-#smtps     inet  n       -       y       -       -       smtpd
-#  -o syslog_name=postfix/smtps
-#  -o smtpd_tls_wrappermode=yes
-#  -o smtpd_sasl_auth_enable=yes
-#  -o smtpd_reject_unlisted_recipient=no
+  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
+smtps     inet  n       -       y       -       -       smtpd
+  -o syslog_name=postfix/smtps
+  -o smtpd_tls_wrappermode=yes
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_reject_unlisted_recipient=no
 #  -o smtpd_client_restrictions=$mua_client_restrictions
 #  -o smtpd_helo_restrictions=$mua_helo_restrictions
 #  -o smtpd_sender_restrictions=$mua_sender_restrictions
 #  -o smtpd_recipient_restrictions=
-#  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
-#  -o milter_macro_daemon_name=ORIGINATING
+  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
 #628       inet  n       -       y       -       -       qmqpd
 pickup    unix  n       -       y       60      1       pickup
+         -o content_filter=
+         -o receive_override_options=no_header_body_checks
 cleanup   unix  n       -       y       -       0       cleanup
 qmgr      unix  n       -       n       300     1       qmgr
 #qmgr     unix  n       -       n       300     1       oqmgr
@@ -2470,7 +2473,7 @@ dovecot	  unix	-	n	n	-	-	pipe
 							<content><![CDATA[
 driver = mysql
 connect = host=<SQL_HOST> dbname=<SQL_DB> user=<SQL_UNPRIVILEGED_USER> password=<SQL_UNPRIVILEGED_PASSWORD>
-default_pass_scheme = CRYPT
+#default_pass_scheme = CRYPT
 user_query = SELECT CONCAT(homedir, maildir) AS home, CONCAT('maildir:', homedir, maildir) AS mail, uid, gid, CONCAT('*:storage=', quota, 'M') as quota_rule FROM mail_users WHERE (username = '%u' OR email = '%u')
 password_query = SELECT username AS user, password_enc AS password, CONCAT(homedir, maildir) AS userdb_home, uid AS userdb_uid, gid AS userdb_gid,  CONCAT('maildir:', homedir, maildir) AS userdb_mail, CONCAT('*:storage=', quota, 'M') as userdb_quota_rule FROM mail_users WHERE (username = '%u' OR email = '%u') AND ((imap = 1 AND '%Ls' = 'imap') OR (pop3 = 1 AND '%Ls' = 'pop3') OR ((postfix = 'Y' AND '%Ls' = 'smtp') OR (postfix = 'Y' AND '%Ls' = 'sieve')))
 iterate_query = "SELECT username AS user FROM mail_users WHERE (imap = 1 OR pop3 = 1)"
@@ -2480,6 +2483,7 @@ iterate_query = "SELECT username AS user FROM mail_users WHERE (imap = 1 OR pop3
 						<file name="/etc/dovecot/conf.d/99-froxlor.conf" chown="root:0"
 							chmod="0644" backup="true">
 							<content><![CDATA[
+disable_plaintext_auth = no
 auth_mechanisms = plain login
 !include auth-sql.conf.ext
 mail_location = mbox:~/mail:INBOX=/var/mail/%u
@@ -2516,8 +2520,9 @@ service stats {
 }
 
 ssl = yes
-ssl_cert = </etc/dovecot/private/dovecot.pem
-ssl_key = </etc/dovecot/private/dovecot.key
+ssl_cert = <<SSL_CERT_FILE>
+ssl_key = <<SSL_KEY_FILE>
+ssl_dh = </usr/share/dovecot/dh.pem
 
 postmaster_address = postmaster@<SERVERNAME>
 
@@ -2972,6 +2977,26 @@ TLSVerifyClient                         off
 				<!-- Pureftpd -->
 				<daemon name="pureftpd" title="PureFTPd">
 					<install><![CDATA[apt-get install pure-ftpd-common pure-ftpd-mysql]]></install>
+					<file name="/etc/pure-ftpd/create-cert.sh" chown="root:0"
+						chmod="0700">
+						<content><![CDATA[#!/bin/bash
+[ -f /etc/ssl/private/pure-ftpd.pem ] || openssl req -x509 -nodes -days 7300 -newkey rsa:4096 -keyout /etc/ssl/private/pure-ftpd.pem -out /etc/ssl/private/pure-ftpd.pem -subj "/C=US/ST=Some-State/O=Internet Widgits Pty Ltd/CN=<SERVERNAME>"
+openssl dhparam -out /etc/ssl/private/pure-ftpd-dhparams.pem 3072
+chmod 0600 /etc/ssl/private/pure-ftpd.pem /etc/ssl/private/pure-ftpd-dhparams.pem
+]]>
+						</content>
+					</file>
+					<commands index="1">
+						<command><![CDATA[/etc/pure-ftpd/create-cert.sh]]></command>
+						<command><![CDATA[rm -f /etc/pure-ftpd/create-cert.sh]]></command>
+					</commands>
+					<file name="/etc/pure-ftpd/conf/TLS"
+						chown="root:0" chmod="0644">
+						<content><![CDATA[
+1
+]]>
+						</content>
+					</file>
 					<file name="/etc/pure-ftpd/conf/MinUID" chown="root:0"
 						chmod="0644">
 						<content><![CDATA[
@@ -3198,9 +3223,19 @@ UPLOADGID=
 			</service>
 			<!-- System tools/services -->
 			<service type="system" title="{{lng.admin.configfiles.etc}}">
+				<!-- Webalizer -->
+				<daemon name="webalizer"
+					title="Webalizer (traffic analyzer)">
+					<install><![CDATA[apt-get install webalizer]]></install>
+				</daemon>
+				<!-- goaccess -->
+				<daemon name="goaccess"
+					title="goaccess (traffic analyzer)" default="true">
+					<install><![CDATA[apt-get install goaccess jq]]></install>
+				</daemon>
 				<!-- AWstats -->
 				<daemon name="awstats"
-					title="Awstats (webalizer alternative)">
+					title="Awstats  (traffic analyzer)">
 					<install><![CDATA[apt-get install awstats]]></install>
 					<command><![CDATA[mv {{settings.system.awstats_conf}}/awstats.conf {{settings.system.awstats_conf}}/awstats.model.conf]]></command>
 					<command><![CDATA[sed -i.bak 's/^DirData/# DirData/' {{settings.system.awstats_conf}}/awstats.model.conf]]></command>
@@ -3280,9 +3315,10 @@ aliases:     files
 						<command><![CDATA[useradd -s /bin/false -g {{settings.system.mod_fcgid_httpgroup}} {{settings.system.mod_fcgid_httpuser}}]]></command>
 						<command><![CDATA[mkdir -p {{settings.system.mod_fcgid_configdir}}]]></command>
 						<command><![CDATA[mkdir -p {{settings.system.mod_fcgid_tmpdir}}]]></command>
-						<command><![CDATA[a2dismod php7.4]]></command>
+						<command><![CDATA[chmod 1777 {{settings.system.mod_fcgid_tmpdir}}]]></command>
+						<command><![CDATA[a2dismod php8.1]]></command>
 					</commands>
-					<!-- instead of just restarting apache, we let the cronjob do all the 
+					<!-- instead of just restarting apache, we let the cronjob do all the
 						dirty work -->
 					<command><![CDATA[php {{const.install_dir}}bin/froxlor-cli froxlor:cron --force]]></command>
 				</daemon>
@@ -3313,15 +3349,17 @@ aliases:     files
 						</visibility>
 						<visibility mode="true">{{settings.phpfpm.enabled_ownvhost}}
 						</visibility>
-						<command><![CDATA[a2dismod php7.4]]></command>
+						<command><![CDATA[a2dismod php8.1]]></command>
 					</commands>
-					<!-- instead of just restarting apache, we let the cronjob do all the 
+					<!-- instead of just restarting apache, we let the cronjob do all the
 						dirty work -->
 					<command><![CDATA[php {{const.install_dir}}bin/froxlor-cli froxlor:cron --force]]></command>
 				</daemon>
 				<!-- Cronjob -->
 				<daemon name="cron" title="Cronjob for froxlor"
 					mandatory="true">
+					<install><![CDATA[apt-get install cron]]></install>
+					<command><![CDATA[ln -s <BASE_PATH>bin/froxlor-cli /usr/local/bin/froxlor-cli]]></command>
 					<command><![CDATA[/usr/bin/php <BASE_PATH>bin/froxlor-cli froxlor:cron --run-task 99]]></command>
 					<command><![CDATA[{{settings.system.crondreload}}]]></command>
 				</daemon>

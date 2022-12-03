@@ -61,7 +61,7 @@ if ($action == 'delete' && $id > 0) {
 		'section' => 'index',
 		'page' => $page
 	]);
-} elseif ($action == 'deletesure' && $id > 0) {
+} elseif (isset($_POST['send']) && $_POST['send'] == 'send' && $action == 'deletesure' && $id > 0) {
 	$chk = (AREA == 'admin' && $userinfo['customers_see_all'] == '1') ? true : false;
 	if (AREA == 'customer') {
 		$chk_stmt = Database::prepare("
@@ -94,28 +94,39 @@ if ($action == 'delete' && $id > 0) {
 		]);
 	}
 } elseif ($action == 'add') {
-	$ins_stmt = Database::prepare("
-		INSERT INTO `" . TABLE_API_KEYS . "` SET
-		`apikey` = :key, `secret` = :secret, `adminid` = :aid, `customerid` = :cid, `valid_until` = '-1', `allowed_from` = ''
-	");
-	// customer generates for himself, admins will see a customer-select-box later
-	if (AREA == 'admin') {
-		$cid = 0;
-	} elseif (AREA == 'customer') {
-		$cid = $userinfo['customerid'];
+	if (isset($_POST['send']) && $_POST['send'] == 'send') {
+		$ins_stmt = Database::prepare("
+			INSERT INTO `" . TABLE_API_KEYS . "` SET
+			`apikey` = :key, `secret` = :secret, `adminid` = :aid, `customerid` = :cid, `valid_until` = '-1', `allowed_from` = ''
+		");
+		// customer generates for himself, admins will see a customer-select-box later
+		if (AREA == 'admin') {
+			$cid = 0;
+		} elseif (AREA == 'customer') {
+			$cid = $userinfo['customerid'];
+		}
+		$key = hash('sha256', openssl_random_pseudo_bytes(64 * 64));
+		$secret = hash('sha512', openssl_random_pseudo_bytes(64 * 64 * 4));
+		Database::pexecute($ins_stmt, [
+			'key' => $key,
+			'secret' => $secret,
+			'aid' => $userinfo['adminid'],
+			'cid' => $cid
+		]);
+		Response::standardSuccess('apikeys.apikey_added', '', [
+			'filename' => $filename,
+			'page' => $page
+		]);
 	}
-	$key = hash('sha256', openssl_random_pseudo_bytes(64 * 64));
-	$secret = hash('sha512', openssl_random_pseudo_bytes(64 * 64 * 4));
-	Database::pexecute($ins_stmt, [
-		'key' => $key,
-		'secret' => $secret,
-		'aid' => $userinfo['adminid'],
-		'cid' => $cid
-	]);
-	Response::standardSuccess('apikeys.apikey_added', '', [
-		'filename' => $filename,
+	HTML::askYesNo('apikey_reallyadd', $filename, [
+		'id' => $id,
+		'page' => $page,
+		'action' => $action
+	], '', [
+		'section' => 'index',
 		'page' => $page
 	]);
+	exit;
 }
 
 $log->logAction(FroxlorLogger::USR_ACTION, LOG_NOTICE, "viewed api::api_keys");
@@ -165,7 +176,7 @@ $collection = [
 $tpl = 'user/table.html.twig';
 
 UI::view($tpl, [
-	'listing' => Listing::formatFromArray($collection, $apikeys_list_data['apikeys_list']),
+	'listing' => Listing::formatFromArray($collection, $apikeys_list_data['apikeys_list'], 'apikeys_list'),
 	'actions_links' => (int)$userinfo['api_allowed'] == 1 ? [
 		[
 			'href' => $linker->getLink(['section' => 'index', 'page' => $page, 'action' => 'add']),

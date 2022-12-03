@@ -35,14 +35,21 @@ class Crypt
 
 	/**
 	 * Generates a random password
+	 *
+	 * @param int $length optional, will be read from settings if not given
+	 * @param bool $isSalt optional, default false, do not include special characters
+	 *
+	 * @return string
 	 */
-	public static function generatePassword()
+	public static function generatePassword(int $length = 0, bool $isSalt = false)
 	{
 		$alpha_lower = 'abcdefghijklmnopqrstuvwxyz';
 		$alpha_upper = strtoupper($alpha_lower);
 		$numeric = '0123456789';
 		$special = Settings::Get('panel.password_special_char');
-		$length = Settings::Get('panel.password_min_length') > 3 ? Settings::Get('panel.password_min_length') : 10;
+		if (empty($length)) {
+			$length = Settings::Get('panel.password_min_length') > 3 ? Settings::Get('panel.password_min_length') : 10;
+		}
 
 		$pw = self::specialShuffle($alpha_lower);
 		$n = floor(($length) / 4);
@@ -55,7 +62,7 @@ class Crypt
 			$pw .= mb_substr(self::specialShuffle($numeric), 0, $n);
 		}
 
-		if (Settings::Get('panel.password_special_char_required')) {
+		if (Settings::Get('panel.password_special_char_required') && !$isSalt) {
 			$pw .= mb_substr(self::specialShuffle($special), 0, $n);
 		}
 
@@ -206,23 +213,22 @@ class Crypt
 	 *            Password to be encrypted
 	 * @param bool $htpasswd
 	 *            optional whether to generate a SHA1 password for directory protection
-	 * @param bool $openssl
-	 *            optional generates $htpasswd like strings but for proftpd
+	 * @param bool $ftpd
+	 *            optional generates sha256 password strings for proftpd/pureftpd
 	 *
-	 * @return string encrypted password)
-	 *
-	 *         0 - default crypt (depends on system configuration)
-	 *         1 - MD5 $1$
-	 *         2 - BLOWFISH $2y$07$
-	 *         3 - SHA-256 $5$ (default)
-	 *         4 - SHA-512 $6$
-	 *
+	 * @return string encrypted password
 	 */
-	public static function makeCryptPassword($password, $htpasswd = false, $openssl = false)
+	public static function makeCryptPassword(string $password, bool $htpasswd = false, bool $ftpd = false)
 	{
-		if ($htpasswd || $openssl) {
-			return '{SHA' . ($openssl ? '1' : '') . '}' . base64_encode(sha1($password, true));
+		if ($htpasswd || $ftpd) {
+			if ($ftpd) {
+				// sha256 compatible for proftpd and pure-ftpd
+				return crypt($password, '$5$' . self::generatePassword(16, true) . '$');
+			}
+			// sha1 hash for dir-protection
+			return '{SHA}' . base64_encode(sha1($password, true));
 		}
+		// crypt using the specified crypt-algorithm or system default
 		$algo = Settings::Get('system.passwordcryptfunc') !== null ? Settings::Get('system.passwordcryptfunc') : PASSWORD_DEFAULT;
 		return password_hash($password, $algo);
 	}
@@ -236,6 +242,18 @@ class Crypt
 	 */
 	public static function createSelfSignedCertificate()
 	{
+		// validate that we have file names in the settings
+		$certFile = Settings::Get('system.ssl_cert_file');
+		$keyFile = Settings::Get('system.ssl_key_file');
+		if (empty($certFile)) {
+			$certFile = '/etc/ssl/froxlor_selfsigned.pem';
+			Settings::Set('system.ssl_cert_file', $certFile);
+		}
+		if (empty($keyFile)) {
+			$keyFile = '/etc/ssl/froxlor_selfsigned.key';
+			Settings::Set('system.ssl_key_file', $keyFile);
+		}
+
 		// certificate info
 		$dn = [
 			"countryName" => "DE",
@@ -256,7 +274,7 @@ class Crypt
 		// sign csr
 		$x509 = openssl_csr_sign($csr, null, $privkey, 365, array('digest_alg' => 'sha384'));
 		// export to files
-		openssl_x509_export_to_file($x509, Settings::Get('system.ssl_cert_file'));
-		openssl_pkey_export_to_file($privkey, Settings::Get('system.ssl_key_file'));
+		openssl_x509_export_to_file($x509, $certFile);
+		openssl_pkey_export_to_file($privkey, $keyFile);
 	}
 }

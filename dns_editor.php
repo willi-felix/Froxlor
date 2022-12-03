@@ -82,7 +82,7 @@ if ($action == 'add_record' && !empty($_POST)) {
 		'page' => $page,
 		'domain_id' => $domain_id
 	]);
-} elseif ($action == 'deletesure' && !empty($_POST)) {
+} elseif (isset($_POST['send']) && $_POST['send'] == 'send' && $action == 'deletesure' && !empty($_POST)) {
 	$entry_id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 	$domain_id = isset($_POST['domain_id']) ? (int)$_POST['domain_id'] : 0;
 	// remove entry
@@ -125,7 +125,6 @@ UI::view('user/dns-editor.html.twig', [
 	'listing' => Listing::format($collection, $dns_list_data, 'dns_list', ['domain_id' => $domain_id]),
 	'actions_links' => [
 		[
-			'class' => 'btn-secondary',
 			'href' => $linker->getLink([
 				'section' => 'domains',
 				'page' => 'domains',
@@ -136,10 +135,9 @@ UI::view('user/dns-editor.html.twig', [
 			'icon' => 'fa-solid fa-pen'
 		],
 		[
-			'class' => 'btn-secondary',
 			'href' => $linker->getLink(['section' => 'domains', 'page' => 'domains']),
-			'label' => lng('menue.domains.domains'),
-			'icon' => 'fa-solid fa-globe'
+			'label' => lng('panel.backtooverview'),
+			'icon' => 'fa-solid fa-reply'
 		]
 	],
 	'formaction' => $linker->getLink(['section' => 'domains', 'action' => 'add_record', 'domain_id' => $domain_id]),

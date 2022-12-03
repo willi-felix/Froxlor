@@ -994,6 +994,8 @@ class Apache extends HttpConfigBase
 			if ($domain['openbasedir'] == '1') {
 				if ($domain['openbasedir_path'] == '1' || strstr($domain['documentroot'], ":") !== false) {
 					$_phpappendopenbasedir = Domain::appendOpenBasedirPath($domain['customerroot'], true);
+				} else if ($domain['openbasedir_path'] == '2' && strpos(dirname($domain['documentroot']).'/', $domain['customerroot']) !== false) {
+					$_phpappendopenbasedir = Domain::appendOpenBasedirPath(dirname($domain['documentroot']).'/', true);
 				} else {
 					$_phpappendopenbasedir = Domain::appendOpenBasedirPath($domain['documentroot'], true);
 				}
@@ -1030,30 +1032,17 @@ class Apache extends HttpConfigBase
 	{
 		$stats_text = '';
 
+		$statTool = Settings::Get('system.traffictool');
+		$statDomain = "";
 		if ($domain['speciallogfile'] == '1') {
-			$statDomain = ($domain['parentdomainid'] == '0') ? $domain['domain'] : $domain['parentdomain'];
-			if (Settings::Get('system.awstats_enabled') == '1') {
-				$stats_text .= '  Alias /awstats "' . FileDir::makeCorrectFile($domain['customerroot'] . '/awstats/' . $statDomain) . '"' . "\n";
+			$statDomain = "/" . (($domain['parentdomainid'] == '0') ? $domain['domain'] : $domain['parentdomain']);
+		}
+		$statDocroot = FileDir::makeCorrectFile($domain['customerroot'] . '/' . $statTool . $statDomain);
+
+		$stats_text .= '  Alias /'.$statTool.' "' . $statDocroot . '"' . "\n";
+		// awstats special requirement for icons
+		if ($statTool == 'awstats') {
 				$stats_text .= '  Alias /awstats-icon "' . FileDir::makeCorrectDir(Settings::Get('system.awstats_icons')) . '"' . "\n";
-			} else {
-				$stats_text .= '  Alias /webalizer "' . FileDir::makeCorrectFile($domain['customerroot'] . '/webalizer/' . $statDomain) . '"' . "\n";
-			}
-		} else {
-			if ($domain['customerroot'] != $domain['documentroot']) {
-				if (Settings::Get('system.awstats_enabled') == '1') {
-					$stats_text .= '  Alias /awstats "' . FileDir::makeCorrectFile($domain['customerroot'] . '/awstats/' . $domain['domain']) . '"' . "\n";
-					$stats_text .= '  Alias /awstats-icon "' . FileDir::makeCorrectDir(Settings::Get('system.awstats_icons')) . '"' . "\n";
-				} else {
-					$stats_text .= '  Alias /webalizer "' . FileDir::makeCorrectFile($domain['customerroot'] . '/webalizer') . '"' . "\n";
-				}
-			} elseif (Settings::Get('system.awstats_enabled') == '1') {
-				// if the docroots are equal, we still have to set an alias for awstats
-				// because the stats are in /awstats/[domain], not just /awstats/
-				// also, the awstats-icons are someplace else too!
-				// -> webalizer does not need this!
-				$stats_text .= '  Alias /awstats "' . FileDir::makeCorrectFile($domain['documentroot'] . '/awstats/' . $domain['domain']) . '"' . "\n";
-				$stats_text .= '  Alias /awstats-icon "' . FileDir::makeCorrectDir(Settings::Get('system.awstats_icons')) . '"' . "\n";
-			}
 		}
 
 		return $stats_text;
@@ -1136,7 +1125,7 @@ class Apache extends HttpConfigBase
 			$logfiles_text .= '  CustomLog "' . $access_log . '" ' . $logtype . "\n";
 		}
 
-		if (Settings::Get('system.awstats_enabled') == '1') {
+		if (Settings::Get('system.traffictool') == 'awstats') {
 			if ((int)$domain['parentdomainid'] == 0) {
 				// prepare the aliases and subdomains for stats config files
 				$server_alias = '';

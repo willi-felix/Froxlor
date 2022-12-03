@@ -33,18 +33,29 @@ use Froxlor\Api\Commands\Domains;
 use Froxlor\Api\Commands\SubDomains;
 use Froxlor\FroxlorLogger;
 use Froxlor\UI\Collection;
+use Froxlor\UI\HTML;
 use Froxlor\UI\Listing;
 use Froxlor\UI\Panel\UI;
+use Froxlor\UI\Request;
 use Froxlor\UI\Response;
 
 // This file is being included in admin_domains and customer_domains
 // and therefore does not need to require lib/init.php
 
 $success_message = "";
+$id = (int)Request::get('id');
 
 // do the delete and then just show a success-message and the certificates list again
 if ($action == 'delete') {
-	$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+	HTML::askYesNo('certificate_reallydelete', $filename, [
+		'id' => $id,
+		'page' => $page,
+		'action' => 'deletesure'
+	], '', [
+		'section' => 'domains',
+		'page' => $page
+	]);
+} elseif (isset($_POST['send']) && $_POST['send'] == 'send' && $action == 'deletesure' && $id > 0) {
 	if ($id > 0) {
 		try {
 			$json_result = Certificates::getLocal($userinfo, [

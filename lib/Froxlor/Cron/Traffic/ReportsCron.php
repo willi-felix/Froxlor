@@ -56,6 +56,10 @@ class ReportsCron extends FroxlorCron
 		 */
 		$mail = new Mailer(true);
 
+		// set default language before anything else to
+		// ensure that we can display messages
+		Language::setLanguage(Settings::Get('panel.standardlanguage'));
+
 		if ((int)Settings::Get('system.report_trafficmax') > 0) {
 			// Warn the customers at xx% traffic-usage
 			$result_stmt = Database::prepare("
@@ -78,11 +82,14 @@ class ReportsCron extends FroxlorCron
 			Database::pexecute($result_stmt, $result_data);
 
 			while ($row = $result_stmt->fetch(PDO::FETCH_ASSOC)) {
+				$row['traffic'] *= 1024;
+				$row['traffic_used'] *= 1024;
 				if (isset($row['traffic']) && $row['traffic'] > 0 && $row['traffic_used'] != null && (($row['traffic_used'] * 100) / $row['traffic']) >= (int)Settings::Get('system.report_trafficmax')) {
 					$rep_userinfo = [
 						'name' => $row['name'],
 						'firstname' => $row['firstname'],
 						'company' => $row['company'],
+						'loginname' => $row['loginname'],
 						'customernumber' => $row['customernumber']
 					];
 					$replace_arr = [
@@ -92,10 +99,8 @@ class ReportsCron extends FroxlorCron
 						'COMPANY' => $rep_userinfo['company'],
 						'USERNAME' => $rep_userinfo['loginname'],
 						'CUSTOMER_NO' => $rep_userinfo['customernumber'],
-						'TRAFFIC' => round(($row['traffic'] / 1024), 2),
-						/* traffic is stored in KB, template uses MB */
-						'TRAFFICUSED' => round(($row['traffic_used'] / 1024), 2),
-						/* traffic is stored in KB, template uses MB */
+						'TRAFFIC' => PhpHelper::sizeReadable($row['traffic'], null, 'bi'),
+						'TRAFFICUSED' => PhpHelper::sizeReadable($row['traffic_used'], null, 'bi'),
 						'USAGE_PERCENT' => round(($row['traffic_used'] * 100) / $row['traffic'], 2),
 						'MAX_PERCENT' => Settings::Get('system.report_trafficmax')
 					];
@@ -116,11 +121,11 @@ class ReportsCron extends FroxlorCron
 						'varname' => 'trafficmaxpercent_subject'
 					];
 					$result2 = Database::pexecute_first($result2_stmt, $result2_data);
-					$mail_subject = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : lng('mails.trafficmaxpercent.subject')), $replace_arr));
+					$mail_subject = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : Language::getTranslation('mails.trafficmaxpercent.subject')), $replace_arr));
 
 					$result2_data['varname'] = 'trafficmaxpercent_mailbody';
 					$result2 = Database::pexecute_first($result2_stmt, $result2_data);
-					$mail_body = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : lng('mails.trafficmaxpercent.mailbody')), $replace_arr));
+					$mail_body = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : Language::getTranslation('mails.trafficmaxpercent.mailbody')), $replace_arr));
 
 					$_mailerror = false;
 					$mailerr_msg = "";
@@ -172,13 +177,13 @@ class ReportsCron extends FroxlorCron
 			Database::pexecute($result_stmt, $result_data);
 
 			while ($row = $result_stmt->fetch(PDO::FETCH_ASSOC)) {
-				if (isset($row['traffic']) && $row['traffic'] > 0 && (($row['traffic_used_total'] * 100) / $row['traffic']) >= (int)Settings::Get('system.report_trafficmax')) {
+				$row['traffic'] *= 1024;
+				$row['traffic_used_total'] *= 1024;
+				if (isset($row['traffic']) && $row['traffic'] > 0 && (($row['traffic_used_total'] * 100) / ($row['traffic'])) >= (int)Settings::Get('system.report_trafficmax')) {
 					$replace_arr = [
 						'NAME' => $row['name'],
-						'TRAFFIC' => round(($row['traffic'] / 1024), 2),
-						/* traffic is stored in KB, template uses MB */
-						'TRAFFICUSED' => round(($row['traffic_used_total'] / 1024), 2),
-						/* traffic is stored in KB, template uses MB */
+						'TRAFFIC' => PhpHelper::sizeReadable($row['traffic'], null, 'bi'),
+						'TRAFFICUSED' => PhpHelper::sizeReadable($row['traffic_used_total'], null, 'bi'),
 						'USAGE_PERCENT' => round(($row['traffic_used_total'] * 100) / $row['traffic'], 2),
 						'MAX_PERCENT' => Settings::Get('system.report_trafficmax')
 					];
@@ -199,11 +204,11 @@ class ReportsCron extends FroxlorCron
 						'varname' => 'trafficmaxpercent_subject'
 					];
 					$result2 = Database::pexecute_first($result2_stmt, $result2_data);
-					$mail_subject = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : lng('mails.trafficmaxpercent.subject')), $replace_arr));
+					$mail_subject = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : Language::getTranslation('mails.trafficmaxpercent.subject')), $replace_arr));
 
 					$result2_data['varname'] = 'trafficmaxpercent_mailbody';
 					$result2 = Database::pexecute_first($result2_stmt, $result2_data);
-					$mail_body = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : lng('mails.trafficmaxpercent.mailbody')), $replace_arr));
+					$mail_body = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : Language::getTranslation('mails.trafficmaxpercent.mailbody')), $replace_arr));
 
 					$_mailerror = false;
 					$mailerr_msg = "";
@@ -259,34 +264,35 @@ class ReportsCron extends FroxlorCron
 					Database::pexecute($customers_stmt, $customers_data);
 
 					while ($customer = $customers_stmt->fetch(PDO::FETCH_ASSOC)) {
-						$t = $customer['traffic_used_total'] / 1048576;
+						$customer['traffic'] *= 1024;
+						$t = $customer['traffic_used_total'] * 1024;
 						if ($customer['traffic'] > 0) {
-							$p = (($customer['traffic_used_total'] * 100) / $customer['traffic']);
-							$tg = $customer['traffic'] / 1048576;
-							$str = sprintf('%00.1f GB  ( %00.1f %% )', $t, $p);
-							$mail_body .= sprintf('%-15s', $customer['loginname']) . ' ' . sprintf('%-25s', $str) . ' ' . sprintf('%00.1f GB', $tg) . "\n";
+							$p = (($t * 100) / $customer['traffic']);
+							$tg = $customer['traffic'];
+							$str = sprintf('%s  ( %00.1f %% )', PhpHelper::sizeReadable($t, null, 'bi'), $p);
+							$mail_body .= sprintf('%-15s', $customer['loginname']) . ' ' . sprintf('%-25s', $str) . ' ' . sprintf('%s', PhpHelper::sizeReadable($tg, null, 'bi')) . "\n";
 						} elseif ($customer['traffic'] == 0) {
-							$str = sprintf('%00.1f GB  (   -   )', $t);
+							$str = sprintf('%s  (   -   )', PhpHelper::sizeReadable($t, null, 'bi'));
 							$mail_body .= sprintf('%-15s', $customer['loginname']) . ' ' . sprintf('%-25s', $str) . ' ' . '0' . "\n";
 						} else {
-							$str = sprintf('%00.1f GB  (   -   )', $t);
+							$str = sprintf('%s  (   -   )', PhpHelper::sizeReadable($t, null, 'bi'));
 							$mail_body .= sprintf('%-15s', $customer['loginname']) . ' ' . sprintf('%-25s', $str) . ' ' . 'unlimited' . "\n";
 						}
 					}
 
 					$mail_body .= '---------------------------------------------------------------' . "\n";
 
-					$t = $row['traffic_used_total'] / 1048576;
+					$t = $row['traffic_used_total'];
 					if ($row['traffic'] > 0) {
-						$p = (($row['traffic_used_total'] * 100) / $row['traffic']);
-						$tg = $row['traffic'] / 1048576;
-						$str = sprintf('%00.1f GB  ( %00.1f %% )', $t, $p);
-						$mail_body .= sprintf('%-15s', $row['loginname']) . ' ' . sprintf('%-25s', $str) . ' ' . sprintf('%00.1f GB', $tg) . "\n";
+						$p = (($t * 100) / $row['traffic']);
+						$tg = $row['traffic'];
+						$str = sprintf('%s  ( %00.1f %% )', PhpHelper::sizeReadable($t, null, 'bi'), $p);
+						$mail_body .= sprintf('%-15s', $row['loginname']) . ' ' . sprintf('%-25s', $str) . ' ' . sprintf('%s', PhpHelper::sizeReadable($tg, null, 'bi')) . "\n";
 					} elseif ($row['traffic'] == 0) {
-						$str = sprintf('%00.1f GB  (   -   )', $t);
+						$str = sprintf('%s  (   -   )', PhpHelper::sizeReadable($t, null, 'bi'));
 						$mail_body .= sprintf('%-15s', $row['loginname']) . ' ' . sprintf('%-25s', $str) . ' ' . '0' . "\n";
 					} else {
-						$str = sprintf('%00.1f GB  (   -   )', $t);
+						$str = sprintf('%s  (   -   )', PhpHelper::sizeReadable($t, null, 'bi'));
 						$mail_body .= sprintf('%-15s', $row['loginname']) . ' ' . sprintf('%-25s', $str) . ' ' . 'unlimited' . "\n";
 					}
 
@@ -296,6 +302,7 @@ class ReportsCron extends FroxlorCron
 						$mail->SetFrom($row['email'], $row['name']);
 						$mail->Subject = $mail_subject;
 						$mail->Body = $mail_body;
+						$mail->MsgHTML(nl2br($mail_body));
 						$mail->AddAddress($row['email'], $row['name']);
 						$mail->Send();
 					} catch (\PHPMailer\PHPMailer\Exception $e) {
@@ -345,11 +352,14 @@ class ReportsCron extends FroxlorCron
 			$mail = new Mailer(true);
 
 			while ($row = $result_stmt->fetch(PDO::FETCH_ASSOC)) {
+				$row['diskspace'] *= 1024;
+				$row['diskspace_used'] *= 1024;
 				if (isset($row['diskspace']) && $row['diskspace_used'] != null && $row['diskspace_used'] > 0 && (($row['diskspace_used'] * 100) / $row['diskspace']) >= (int)Settings::Get('system.report_webmax')) {
 					$rep_userinfo = [
 						'name' => $row['name'],
 						'firstname' => $row['firstname'],
 						'company' => $row['company'],
+						'loginname' => $row['loginname'],
 						'customernumber' => $row['customernumber']
 					];
 					$replace_arr = [
@@ -359,10 +369,8 @@ class ReportsCron extends FroxlorCron
 						'COMPANY' => $rep_userinfo['company'],
 						'USERNAME' => $rep_userinfo['loginname'],
 						'CUSTOMER_NO' => $rep_userinfo['customernumber'],
-						'DISKAVAILABLE' => round(($row['diskspace'] / 1024), 2),
-						/* traffic is stored in KB, template uses MB */
-						'DISKUSED' => round($row['diskspace_used'] / 1024, 2),
-						/* traffic is stored in KB, template uses MB */
+						'DISKAVAILABLE' => PhpHelper::sizeReadable($row['diskspace'], null, 'bi'),
+						'DISKUSED' => PhpHelper::sizeReadable($row['diskspace_used'], null, 'bi'),
 						'USAGE_PERCENT' => round(($row['diskspace_used'] * 100) / $row['diskspace'], 2),
 						'MAX_PERCENT' => Settings::Get('system.report_webmax')
 					];
@@ -383,11 +391,11 @@ class ReportsCron extends FroxlorCron
 						'varname' => 'diskmaxpercent_subject'
 					];
 					$result2 = Database::pexecute_first($result2_stmt, $result2_data);
-					$mail_subject = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : lng('mails.diskmaxpercent.subject')), $replace_arr));
+					$mail_subject = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : Language::getTranslation('mails.diskmaxpercent.subject')), $replace_arr));
 
 					$result2_data['varname'] = 'diskmaxpercent_mailbody';
 					$result2 = Database::pexecute_first($result2_stmt, $result2_data);
-					$mail_body = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : lng('mails.diskmaxpercent.mailbody')), $replace_arr));
+					$mail_body = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : Language::getTranslation('mails.diskmaxpercent.mailbody')), $replace_arr));
 
 					$_mailerror = false;
 					$mailerr_msg = "";
@@ -430,13 +438,13 @@ class ReportsCron extends FroxlorCron
 			");
 
 			while ($row = $result_stmt->fetch(PDO::FETCH_ASSOC)) {
+				$row['diskspace'] *= 1024;
+				$row['diskspace_used'] *= 1024;
 				if (isset($row['diskspace']) && $row['diskspace_used'] != null && $row['diskspace_used'] > 0 && (($row['diskspace_used'] * 100) / $row['diskspace']) >= (int)Settings::Get('system.report_webmax')) {
 					$replace_arr = [
 						'NAME' => $row['name'],
-						'DISKAVAILABLE' => ($row['diskspace'] / 1024),
-						/* traffic is stored in KB, template uses MB */
-						'DISKUSED' => round($row['diskspace_used'] / 1024, 2),
-						/* traffic is stored in KB, template uses MB */
+						'DISKAVAILABLE' => PhpHelper::sizeReadable($row['diskspace'], null, 'bi'),
+						'DISKUSED' => PhpHelper::sizeReadable($row['diskspace_used'], null, 'bi'),
 						'USAGE_PERCENT' => ($row['diskspace_used'] * 100) / $row['diskspace'],
 						'MAX_PERCENT' => Settings::Get('system.report_webmax')
 					];
@@ -457,11 +465,11 @@ class ReportsCron extends FroxlorCron
 						'varname' => 'diskmaxpercent_subject'
 					];
 					$result2 = Database::pexecute_first($result2_stmt, $result2_data);
-					$mail_subject = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : lng('mails.diskmaxpercent.subject')), $replace_arr));
+					$mail_subject = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : Language::getTranslation('mails.diskmaxpercent.subject')), $replace_arr));
 
 					$result2_data['varname'] = 'diskmaxpercent_mailbody';
 					$result2 = Database::pexecute_first($result2_stmt, $result2_data);
-					$mail_body = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : lng('mails.diskmaxpercent.mailbody')), $replace_arr));
+					$mail_body = html_entity_decode(PhpHelper::replaceVariables((($result2 !== false && $result2['value'] != '') ? $result2['value'] : Language::getTranslation('mails.diskmaxpercent.mailbody')), $replace_arr));
 
 					$_mailerror = false;
 					$mailerr_msg = "";

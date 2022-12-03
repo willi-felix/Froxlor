@@ -986,7 +986,6 @@ if (Froxlor::isFroxlorVersion('0.10.34.1')) {
 	Froxlor::updateToVersion('0.10.35');
 }
 
-
 if (Froxlor::isFroxlorVersion('0.10.35')) {
 	Update::showUpdateStep("Updating from 0.10.35 to 0.10.35.1", false);
 	Froxlor::updateToVersion('0.10.35.1');
@@ -1005,4 +1004,19 @@ if (Froxlor::isFroxlorVersion('0.10.36')) {
 if (Froxlor::isFroxlorVersion('0.10.37')) {
 	Update::showUpdateStep("Updating from 0.10.37 to 0.10.38", false);
 	Froxlor::updateToVersion('0.10.38');
+}
+
+if (Froxlor::isFroxlorVersion('0.10.38')) {
+	Update::showUpdateStep("Updating from 0.10.38 to 0.10.38.1", false);
+	Froxlor::updateToVersion('0.10.38.1');
+}
+
+if (Froxlor::isFroxlorVersion('0.10.38.1')) {
+	Update::showUpdateStep("Updating from 0.10.38.1 to 0.10.38.2", false);
+	Froxlor::updateToVersion('0.10.38.2');
+}
+
+if (Froxlor::isFroxlorVersion('0.10.38.2')) {
+	Update::showUpdateStep("Updating from 0.10.38.2 to 0.10.38.3", false);
+	Froxlor::updateToVersion('0.10.38.3');
 }

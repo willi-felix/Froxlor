@@ -87,7 +87,8 @@ class Froxlor extends ApiCommand
 						'version' => $this->version,
 						'message' => $text,
 						'link' => AutoUpdate::getFromResult('url'),
-						'additional_info' => AutoUpdate::getFromResult('info')
+						'additional_info' => AutoUpdate::getFromResult('info'),
+						'aucheck' => $aucheck
 					];
 				} else if ($aucheck < 0 || $aucheck > 1) {
 					// errors
@@ -105,7 +106,8 @@ class Froxlor extends ApiCommand
 						'version' => $this->version,
 						'message' => '',
 						'link' => '',
-						'additional_info' => $errmsg
+						'additional_info' => $errmsg,
+						'aucheck' => $aucheck
 					];
 				} else {
 					$response = [
@@ -113,7 +115,8 @@ class Froxlor extends ApiCommand
 						'version' => $this->version,
 						'message' => '',
 						'link' => '',
-						'additional_info' => lng('update.noupdatesavail', [(Settings::Get('system.update_channel') == 'testing' ? lng('serversettings.uc_testing') . ' ' : '')])
+						'additional_info' => AutoUpdate::getFromResult('info'),
+						'aucheck' => $aucheck
 					];
 				}
 
@@ -254,12 +257,16 @@ class Froxlor extends ApiCommand
 	/**
 	 * returns a random password based on froxlor settings for min-length, included characters, etc.
 	 *
+	 * @param int $length
+	 *            optional length of password, defaults to 10
+	 *
 	 * @access admin, customer
 	 * @return string
 	 */
 	public function generatePassword()
 	{
-		return $this->response(Crypt::generatePassword());
+		$length = $this->getParam('length', true, 10);
+		return $this->response(Crypt::generatePassword($length));
 	}
 
 	/**

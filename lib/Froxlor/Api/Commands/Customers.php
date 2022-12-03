@@ -361,12 +361,12 @@ class Customers extends ApiCommand implements ResourceEntity
 				}
 
 				// validation
-				$name = Validate::validate($name, 'name', '', '', [], true);
-				$firstname = Validate::validate($firstname, 'first name', '', '', [], true);
-				$company = Validate::validate($company, 'company', '', '', [], true);
-				$street = Validate::validate($street, 'street', '', '', [], true);
+				$name = Validate::validate($name, 'name', Validate::REGEX_DESC_TEXT, '', [], true);
+				$firstname = Validate::validate($firstname, 'first name', Validate::REGEX_DESC_TEXT, '', [], true);
+				$company = Validate::validate($company, 'company', Validate::REGEX_DESC_TEXT, '', [], true);
+				$street = Validate::validate($street, 'street', Validate::REGEX_DESC_TEXT, '', [], true);
 				$zipcode = Validate::validate($zipcode, 'zipcode', '/^[0-9 \-A-Z]*$/', '', [], true);
-				$city = Validate::validate($city, 'city', '', '', [], true);
+				$city = Validate::validate($city, 'city', Validate::REGEX_DESC_TEXT, '', [], true);
 				$phone = Validate::validate($phone, 'phone', '/^[0-9\- \+\(\)\/]*$/', '', [], true);
 				$fax = Validate::validate($fax, 'fax', '/^[0-9\- \+\(\)\/]*$/', '', [], true);
 				$idna_convert = new IdnaWrapper();
@@ -409,10 +409,27 @@ class Customers extends ApiCommand implements ResourceEntity
 				}
 				$allowed_mysqlserver = array_map('intval', $allowed_mysqlserver);
 
-				$diskspace = $diskspace * 1024;
-				$traffic = $traffic * 1024 * 1024;
+				$diskspace *= 1024;
+				$traffic *= 1024 * 1024;
 
-				if (((($this->getUserDetail('diskspace_used') + $diskspace) > $this->getUserDetail('diskspace')) && ($this->getUserDetail('diskspace') / 1024) != '-1') || ((($this->getUserDetail('mysqls_used') + $mysqls) > $this->getUserDetail('mysqls')) && $this->getUserDetail('mysqls') != '-1') || ((($this->getUserDetail('emails_used') + $emails) > $this->getUserDetail('emails')) && $this->getUserDetail('emails') != '-1') || ((($this->getUserDetail('email_accounts_used') + $email_accounts) > $this->getUserDetail('email_accounts')) && $this->getUserDetail('email_accounts') != '-1') || ((($this->getUserDetail('email_forwarders_used') + $email_forwarders) > $this->getUserDetail('email_forwarders')) && $this->getUserDetail('email_forwarders') != '-1') || ((($this->getUserDetail('email_quota_used') + $email_quota) > $this->getUserDetail('email_quota')) && $this->getUserDetail('email_quota') != '-1' && Settings::Get('system.mail_quota_enabled') == '1') || ((($this->getUserDetail('ftps_used') + $ftps) > $this->getUserDetail('ftps')) && $this->getUserDetail('ftps') != '-1') || ((($this->getUserDetail('subdomains_used') + $subdomains) > $this->getUserDetail('subdomains')) && $this->getUserDetail('subdomains') != '-1') || (($diskspace / 1024) == '-1' && ($this->getUserDetail('diskspace') / 1024) != '-1') || ($mysqls == '-1' && $this->getUserDetail('mysqls') != '-1') || ($emails == '-1' && $this->getUserDetail('emails') != '-1') || ($email_accounts == '-1' && $this->getUserDetail('email_accounts') != '-1') || ($email_forwarders == '-1' && $this->getUserDetail('email_forwarders') != '-1') || ($email_quota == '-1' && $this->getUserDetail('email_quota') != '-1' && Settings::Get('system.mail_quota_enabled') == '1') || ($ftps == '-1' && $this->getUserDetail('ftps') != '-1') || ($subdomains == '-1' && $this->getUserDetail('subdomains') != '-1')) {
+				if (
+					($diskspace != 0 && (($this->getUserDetail('diskspace_used') + $diskspace) > $this->getUserDetail('diskspace')) && ($this->getUserDetail('diskspace') / 1024) != '-1')
+					|| ($mysqls != 0 && (($this->getUserDetail('mysqls_used') + $mysqls) > $this->getUserDetail('mysqls')) && $this->getUserDetail('mysqls') != '-1')
+					|| ($emails != 0 && (($this->getUserDetail('emails_used') + $emails) > $this->getUserDetail('emails')) && $this->getUserDetail('emails') != '-1')
+					|| ($email_accounts != 0 && (($this->getUserDetail('email_accounts_used') + $email_accounts) > $this->getUserDetail('email_accounts')) && $this->getUserDetail('email_accounts') != '-1')
+					|| ($email_forwarders != 0 && (($this->getUserDetail('email_forwarders_used') + $email_forwarders) > $this->getUserDetail('email_forwarders')) && $this->getUserDetail('email_forwarders') != '-1')
+					|| ($email_quota != 0 && (($this->getUserDetail('email_quota_used') + $email_quota) > $this->getUserDetail('email_quota')) && $this->getUserDetail('email_quota') != '-1' && Settings::Get('system.mail_quota_enabled') == '1')
+					|| ($ftps != 0 && (($this->getUserDetail('ftps_used') + $ftps) > $this->getUserDetail('ftps')) && $this->getUserDetail('ftps') != '-1')
+					|| ($subdomains != 0 && (($this->getUserDetail('subdomains_used') + $subdomains) > $this->getUserDetail('subdomains')) && $this->getUserDetail('subdomains') != '-1')
+					|| (($diskspace / 1024) == '-1' && ($this->getUserDetail('diskspace') / 1024) != '-1')
+					|| ($mysqls == '-1' && $this->getUserDetail('mysqls') != '-1')
+					|| ($emails == '-1' && $this->getUserDetail('emails') != '-1')
+					|| ($email_accounts == '-1' && $this->getUserDetail('email_accounts') != '-1')
+					|| ($email_forwarders == '-1' && $this->getUserDetail('email_forwarders') != '-1')
+					|| ($email_quota == '-1' && $this->getUserDetail('email_quota') != '-1' && Settings::Get('system.mail_quota_enabled') == '1')
+					|| ($ftps == '-1' && $this->getUserDetail('ftps') != '-1')
+					|| ($subdomains == '-1' && $this->getUserDetail('subdomains') != '-1')
+				) {
 					Response::standardError('youcantallocatemorethanyouhave', '', true);
 				}
 
@@ -633,10 +650,7 @@ class Customers extends ApiCommand implements ResourceEntity
 						'passwd' => $htpasswdPassword
 					];
 
-					$stats_folder = 'webalizer';
-					if (Settings::Get('system.awstats_enabled') == '1') {
-						$stats_folder = 'awstats';
-					}
+					$stats_folder = Settings::Get('system.traffictool');
 					$ins_data['path'] = FileDir::makeCorrectDir($documentroot . '/' . $stats_folder . '/');
 					$this->logger()->logAction(FroxlorLogger::ADM_ACTION, LOG_NOTICE, "[API] automatically added " . $stats_folder . " htpasswd for user '" . $loginname . "'");
 					Database::pexecute($ins_stmt, $ins_data, true, true);
@@ -1080,12 +1094,12 @@ class Customers extends ApiCommand implements ResourceEntity
 		// validation
 		if ($this->isAdmin()) {
 			$idna_convert = new IdnaWrapper();
-			$name = Validate::validate($name, 'name', '', '', [], true);
-			$firstname = Validate::validate($firstname, 'first name', '', '', [], true);
-			$company = Validate::validate($company, 'company', '', '', [], true);
-			$street = Validate::validate($street, 'street', '', '', [], true);
+			$name = Validate::validate($name, 'name', Validate::REGEX_DESC_TEXT, '', [], true);
+			$firstname = Validate::validate($firstname, 'first name', Validate::REGEX_DESC_TEXT, '', [], true);
+			$company = Validate::validate($company, 'company', Validate::REGEX_DESC_TEXT, '', [], true);
+			$street = Validate::validate($street, 'street', Validate::REGEX_DESC_TEXT, '', [], true);
 			$zipcode = Validate::validate($zipcode, 'zipcode', '/^[0-9 \-A-Z]*$/', '', [], true);
-			$city = Validate::validate($city, 'city', '', '', [], true);
+			$city = Validate::validate($city, 'city', Validate::REGEX_DESC_TEXT, '', [], true);
 			$phone = Validate::validate($phone, 'phone', '/^[0-9\- \+\(\)\/]*$/', '', [], true);
 			$fax = Validate::validate($fax, 'fax', '/^[0-9\- \+\(\)\/]*$/', '', [], true);
 			$email = $idna_convert->encode(Validate::validate($email, 'email', '', '', [], true));
@@ -1110,10 +1124,27 @@ class Customers extends ApiCommand implements ResourceEntity
 		}
 
 		if ($this->isAdmin()) {
-			$diskspace = $diskspace * 1024;
-			$traffic = $traffic * 1024 * 1024;
+			$diskspace *= 1024;
+			$traffic *= 1024 * 1024;
 
-			if (((($this->getUserDetail('diskspace_used') + $diskspace - $result['diskspace']) > $this->getUserDetail('diskspace')) && ($this->getUserDetail('diskspace') / 1024) != '-1') || ((($this->getUserDetail('mysqls_used') + $mysqls - $result['mysqls']) > $this->getUserDetail('mysqls')) && $this->getUserDetail('mysqls') != '-1') || ((($this->getUserDetail('emails_used') + $emails - $result['emails']) > $this->getUserDetail('emails')) && $this->getUserDetail('emails') != '-1') || ((($this->getUserDetail('email_accounts_used') + $email_accounts - $result['email_accounts']) > $this->getUserDetail('email_accounts')) && $this->getUserDetail('email_accounts') != '-1') || ((($this->getUserDetail('email_forwarders_used') + $email_forwarders - $result['email_forwarders']) > $this->getUserDetail('email_forwarders')) && $this->getUserDetail('email_forwarders') != '-1') || ((($this->getUserDetail('email_quota_used') + $email_quota - $result['email_quota']) > $this->getUserDetail('email_quota')) && $this->getUserDetail('email_quota') != '-1' && Settings::Get('system.mail_quota_enabled') == '1') || ((($this->getUserDetail('ftps_used') + $ftps - $result['ftps']) > $this->getUserDetail('ftps')) && $this->getUserDetail('ftps') != '-1') || ((($this->getUserDetail('subdomains_used') + $subdomains - $result['subdomains']) > $this->getUserDetail('subdomains')) && $this->getUserDetail('subdomains') != '-1') || (($diskspace / 1024) == '-1' && ($this->getUserDetail('diskspace') / 1024) != '-1') || ($mysqls == '-1' && $this->getUserDetail('mysqls') != '-1') || ($emails == '-1' && $this->getUserDetail('emails') != '-1') || ($email_accounts == '-1' && $this->getUserDetail('email_accounts') != '-1') || ($email_forwarders == '-1' && $this->getUserDetail('email_forwarders') != '-1') || ($email_quota == '-1' && $this->getUserDetail('email_quota') != '-1' && Settings::Get('system.mail_quota_enabled') == '1') || ($ftps == '-1' && $this->getUserDetail('ftps') != '-1') || ($subdomains == '-1' && $this->getUserDetail('subdomains') != '-1')) {
+			if (
+				($diskspace != 0 && (($this->getUserDetail('diskspace_used') + $diskspace - $result['diskspace']) > $this->getUserDetail('diskspace')) && ($this->getUserDetail('diskspace') / 1024) != '-1')
+				|| ($mysqls != 0 && (($this->getUserDetail('mysqls_used') + $mysqls - $result['mysqls']) > $this->getUserDetail('mysqls')) && $this->getUserDetail('mysqls') != '-1')
+				|| ($emails != 0 && (($this->getUserDetail('emails_used') + $emails - $result['emails']) > $this->getUserDetail('emails')) && $this->getUserDetail('emails') != '-1')
+				|| ($email_accounts != 0 && (($this->getUserDetail('email_accounts_used') + $email_accounts - $result['email_accounts']) > $this->getUserDetail('email_accounts')) && $this->getUserDetail('email_accounts') != '-1')
+				|| ($email_forwarders != 0 && (($this->getUserDetail('email_forwarders_used') + $email_forwarders - $result['email_forwarders']) > $this->getUserDetail('email_forwarders')) && $this->getUserDetail('email_forwarders') != '-1')
+				|| ($email_quota != 0 && (($this->getUserDetail('email_quota_used') + $email_quota - $result['email_quota']) > $this->getUserDetail('email_quota')) && $this->getUserDetail('email_quota') != '-1' && Settings::Get('system.mail_quota_enabled') == '1')
+				|| ($ftps != 0 && (($this->getUserDetail('ftps_used') + $ftps - $result['ftps']) > $this->getUserDetail('ftps')) && $this->getUserDetail('ftps') != '-1')
+				|| ($subdomains != 0 && (($this->getUserDetail('subdomains_used') + $subdomains - $result['subdomains']) > $this->getUserDetail('subdomains')) && $this->getUserDetail('subdomains') != '-1')
+				|| (($diskspace / 1024) == '-1' && ($this->getUserDetail('diskspace') / 1024) != '-1')
+				|| ($mysqls == '-1' && $this->getUserDetail('mysqls') != '-1')
+				|| ($emails == '-1' && $this->getUserDetail('emails') != '-1')
+				|| ($email_accounts == '-1' && $this->getUserDetail('email_accounts') != '-1')
+				|| ($email_forwarders == '-1' && $this->getUserDetail('email_forwarders') != '-1')
+				|| ($email_quota == '-1' && $this->getUserDetail('email_quota') != '-1' && Settings::Get('system.mail_quota_enabled') == '1')
+				|| ($ftps == '-1' && $this->getUserDetail('ftps') != '-1')
+				|| ($subdomains == '-1' && $this->getUserDetail('subdomains') != '-1')
+			) {
 				Response::standardError('youcantallocatemorethanyouhave', '', true);
 			}
 
@@ -1354,7 +1385,7 @@ class Customers extends ApiCommand implements ResourceEntity
 				'api_allowed' => $api_allowed,
 				'allowed_mysqlserver' => empty($allowed_mysqlserver) ? "" : json_encode($allowed_mysqlserver)
 			];
-			$upd_data = $upd_data + $admin_upd_data;
+			$upd_data += $admin_upd_data;
 		}
 
 		$upd_query = "UPDATE `" . TABLE_PANEL_CUSTOMERS . "` SET
@@ -1701,39 +1732,39 @@ class Customers extends ApiCommand implements ResourceEntity
 			], true, true);
 
 			// update admin-resource-usage
-			Admins::decreaseUsage($this->getUserDetail('adminid'), 'customers_used');
-			Admins::decreaseUsage($this->getUserDetail('adminid'), 'domains_used', '', (int)($domains_deleted - $result['subdomains_used']));
+			Admins::decreaseUsage($result['adminid'], 'customers_used');
+			Admins::decreaseUsage($result['adminid'], 'domains_used', '', (int)($domains_deleted - $result['subdomains_used']));
 
 			if ($result['mysqls'] != '-1') {
-				Admins::decreaseUsage($this->getUserDetail('adminid'), 'mysqls_used', '', (int)$result['mysqls']);
+				Admins::decreaseUsage($result['adminid'], 'mysqls_used', '', (int)$result['mysqls']);
 			}
 
 			if ($result['emails'] != '-1') {
-				Admins::decreaseUsage($this->getUserDetail('adminid'), 'emails_used', '', (int)$result['emails']);
+				Admins::decreaseUsage($result['adminid'], 'emails_used', '', (int)$result['emails']);
 			}
 
 			if ($result['email_accounts'] != '-1') {
-				Admins::decreaseUsage($this->getUserDetail('adminid'), 'email_accounts_used', '', (int)$result['email_accounts']);
+				Admins::decreaseUsage($result['adminid'], 'email_accounts_used', '', (int)$result['email_accounts']);
 			}
 
 			if ($result['email_forwarders'] != '-1') {
-				Admins::decreaseUsage($this->getUserDetail('adminid'), 'email_forwarders_used', '', (int)$result['email_forwarders']);
+				Admins::decreaseUsage($result['adminid'], 'email_forwarders_used', '', (int)$result['email_forwarders']);
 			}
 
 			if ($result['email_quota'] != '-1') {
-				Admins::decreaseUsage($this->getUserDetail('adminid'), 'email_quota_used', '', (int)$result['email_quota']);
+				Admins::decreaseUsage($result['adminid'], 'email_quota_used', '', (int)$result['email_quota']);
 			}
 
 			if ($result['subdomains'] != '-1') {
-				Admins::decreaseUsage($this->getUserDetail('adminid'), 'subdomains_used', '', (int)$result['subdomains']);
+				Admins::decreaseUsage($result['adminid'], 'subdomains_used', '', (int)$result['subdomains']);
 			}
 
 			if ($result['ftps'] != '-1') {
-				Admins::decreaseUsage($this->getUserDetail('adminid'), 'ftps_used', '', (int)$result['ftps']);
+				Admins::decreaseUsage($result['adminid'], 'ftps_used', '', (int)$result['ftps']);
 			}
 
 			if (($result['diskspace'] / 1024) != '-1') {
-				Admins::decreaseUsage($this->getUserDetail('adminid'), 'diskspace_used', '', (int)$result['diskspace']);
+				Admins::decreaseUsage($result['adminid'], 'diskspace_used', '', (int)$result['diskspace']);
 			}
 
 			// rebuild configs

@@ -82,23 +82,27 @@ if ($page == 'overview' && $userinfo['change_serversettings'] == '1') {
 			Response::standardError(lng('error.session_timeout'), lng('error.session_timeout_desc'));
 		}
 
-		if (Form::processForm($settings_data, $_POST, [
-			'filename' => $filename,
-			'action' => $action,
-			'page' => $page
-		], $_part, $settings_all, $settings_part, $only_enabledisable)) {
-			$log->logAction(FroxlorLogger::ADM_ACTION, LOG_INFO, "rebuild configfiles due to changed setting");
-			Cronjob::inserttask(TaskId::REBUILD_VHOST);
-			// Using nameserver, insert a task which rebuilds the server config
-			Cronjob::inserttask(TaskId::REBUILD_DNS);
-			// cron.d file
-			Cronjob::inserttask(TaskId::REBUILD_CRON);
-
-			Response::standardSuccess('settingssaved', '', [
+		try {
+			if (Form::processForm($settings_data, $_POST, [
 				'filename' => $filename,
 				'action' => $action,
 				'page' => $page
-			]);
+			], $_part, $settings_all, $settings_part, $only_enabledisable)) {
+				$log->logAction(FroxlorLogger::ADM_ACTION, LOG_INFO, "rebuild configfiles due to changed setting");
+				Cronjob::inserttask(TaskId::REBUILD_VHOST);
+				// Using nameserver, insert a task which rebuilds the server config
+				Cronjob::inserttask(TaskId::REBUILD_DNS);
+				// cron.d file
+				Cronjob::inserttask(TaskId::REBUILD_CRON);
+
+				Response::standardSuccess('settingssaved', '', [
+					'filename' => $filename,
+					'action' => $action,
+					'page' => $page
+				]);
+			}
+		} catch (Exception $e) {
+			Response::dynamicError($e->getMessage(), $e->getCode());
 		}
 	} else {
 		$_part = isset($_GET['part']) ? $_GET['part'] : '';
@@ -261,7 +265,7 @@ if ($page == 'overview' && $userinfo['change_serversettings'] == '1') {
 	];
 
 	UI::view('user/table.html.twig', [
-		'listing' => Listing::formatFromArray($collection, $integrity_list_data['integrity_list']),
+		'listing' => Listing::formatFromArray($collection, $integrity_list_data['integrity_list'], 'integrity_list'),
 		'actions_links' => [
 			[
 				'href' => $linker->getLink(['section' => 'settings', 'page' => $page, 'action' => 'fix']),

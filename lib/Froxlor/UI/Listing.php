@@ -52,13 +52,15 @@ class Listing
 			'is_search' => $collection->getPagination() instanceof Pagination && $collection->getPagination()->isSearchResult(),
 			'self_overview' => $tabellisting['self_overview'] ?? [],
 			'available_columns' => self::getAvailableColumnsForListing($tabellisting),
+			'no_search' => $tabellisting['no_search'] ?? false,
 			'listing_search_additional_param' => $listing_search_additional_param,
 		];
 	}
 
-	public static function formatFromArray(array $collection, array $tabellisting): array
+	public static function formatFromArray(array $collection, array $tabellisting, string $id): array
 	{
 		return [
+			'id' => $id,
 			'title' => $tabellisting['title'],
 			'description' => $tabellisting['description'] ?? null,
 			'icon' => $tabellisting['icon'] ?? null,
@@ -71,7 +73,7 @@ class Listing
 			'total_entries' => count($collection['data']),
 			'self_overview' => $tabellisting['self_overview'] ?? [],
 			'available_columns' => self::getAvailableColumnsForListing($tabellisting),
-			'no_search' => $collection['no_search'] ?? false,
+			'no_search' => $tabellisting['no_search'] ?? false,
 		];
 	}
 

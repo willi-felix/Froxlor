@@ -37,11 +37,11 @@ if (!defined('_CRON_UPDATE')) {
 }
 
 // last 0.10.x release
-if (Froxlor::isFroxlorVersion('0.10.38')) {
+if (Froxlor::isFroxlorVersion('0.10.38.3')) {
 
 	$update_to = '2.0.0-beta1';
 
-	Update::showUpdateStep("Updating from 0.10.38 to ".$update_to, false);
+	Update::showUpdateStep("Updating from 0.10.38.3 to ".$update_to, false);
 
 	Update::showUpdateStep("Removing unused table");
 	Database::query("DROP TABLE IF EXISTS `panel_sessions`;");
@@ -68,6 +68,13 @@ if (Froxlor::isFroxlorVersion('0.10.38')) {
 	Database::query($sql);
 	// new customer allowed_mysqlserver field
 	Database::query("ALTER TABLE `" . TABLE_PANEL_CUSTOMERS . "` ADD `allowed_mysqlserver` varchar(500) NOT NULL default '[0]';");
+	// ftp_users adjustments
+	Database::query("ALTER TABLE `" . TABLE_FTP_USERS . "` CHANGE `password` varchar(255) NOT NULL default '';");
+	Database::query("ALTER TABLE `" . TABLE_FTP_QUOTALIMITS . "` CHANGE `name` varchar(255) default NULL;");
+	Database::query("ALTER TABLE `" . TABLE_FTP_QUOTATALLIES . "` CHANGE `name` varchar(255) default NULL;");
+	// mail_users adjustments
+	Database::query("ALTER TABLE `" . TABLE_MAIL_USERS . "` CHANGE `password` varchar(255) NOT NULL default '';");
+	Database::query("ALTER TABLE `" . TABLE_MAIL_USERS . "` CHANGE `password_enc` varchar(255) NOT NULL default '';");
 	Update::lastStepStatus(0);
 
 	Update::showUpdateStep("Checking for multiple mysql-servers to allow acccess to customers for existing databases");
@@ -153,14 +160,39 @@ if (Froxlor::isFroxlorVersion('0.10.38')) {
 		'Portugu&ecirc;s' => 'pt',
 		'Italiano' => 'it',
 		'Nederlands' => 'nl',
-		'Svenska' => 'sv',
-		'&#268;esk&aacute; republika' => 'cs'
+		'Svenska' => 'se',
+		'&#268;esk&aacute; republika' => 'cz'
 	];
+	// update user default languages
+	$upd_adm_stmt = Database::prepare("UPDATE `" . TABLE_PANEL_ADMINS . "` SET `def_language` = :nv WHERE `def_language` = :ov");
+	$upd_cus_stmt = Database::prepare("UPDATE `" . TABLE_PANEL_CUSTOMERS . "` SET `def_language` = :nv WHERE `def_language` = :ov");
+	foreach ($lang_map as $old_val => $new_val) {
+		Database::pexecute($upd_adm_stmt, ['nv' => $new_val, 'ov' => $old_val]);
+		Database::pexecute($upd_cus_stmt, ['nv' => $new_val, 'ov' => $old_val]);
+	}
 	Settings::Set('panel.standardlanguage', $lang_map[Settings::Get('panel_standardlanguage')] ?? 'en');
 	Database::query("DELETE FROM `" . TABLE_PANEL_SETTINGS . "` WHERE `settinggroup` = 'system' AND `varname` = 'debug_cron'");
 	Database::query("DELETE FROM `" . TABLE_PANEL_SETTINGS . "` WHERE `settinggroup` = 'system' AND `varname` = 'letsencryptcountrycode'");
 	Database::query("DELETE FROM `" . TABLE_PANEL_SETTINGS . "` WHERE `settinggroup` = 'system' AND `varname` = 'letsencryptstate'");
 	Update::lastStepStatus(0);
 
+	Update::showUpdateStep("Updating email account password-hashes");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password` = REPLACE(`password`, '$1$', '{MD5-CRYPT}$1$') WHERE SUBSTRING(`password`, 1, 3) = '$1$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password` = REPLACE(`password`, '$5$', '{SHA256-CRYPT}$5$') WHERE SUBSTRING(`password`, 1, 3) = '$5$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password` = REPLACE(`password`, '$6$', '{SHA512-CRYPT}$6$') WHERE SUBSTRING(`password`, 1, 3) = '$6$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password` = REPLACE(`password`, '$2y$', '{BLF-CRYPT}$2y$') WHERE SUBSTRING(`password`, 1, 4) = '$2y$'");
+	Update::lastStepStatus(0);
+
 	Froxlor::updateToVersion($update_to);
+}
+
+if (Froxlor::isDatabaseVersion('202112310')) {
+
+	Update::showUpdateStep("Adjusting traffic tool settings");
+	$traffic_tool = Settings::Get('system.awstats_enabled') == 1 ? 'awstats' : 'webalizer';
+	Settings::AddNew("system.traffictool", $traffic_tool);
+	Database::query("DELETE FROM `" . TABLE_PANEL_SETTINGS . "` WHERE `settinggroup` = 'system' AND `varname` = 'awstats_enabled'");
+	Update::lastStepStatus(0);
+
+	Froxlor::updateToDbVersion('202211030');
 }

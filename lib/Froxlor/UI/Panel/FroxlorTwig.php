@@ -76,6 +76,10 @@ class FroxlorTwig extends AbstractExtension
 				$this,
 				'getSetting'
 			]),
+			new TwigFunction('get_config', [
+				$this,
+				'getConfig'
+			]),
 			new TwigFunction('lng', [
 				$this,
 				'getLang'
@@ -89,7 +93,7 @@ class FroxlorTwig extends AbstractExtension
 
 	public function formatBytesFilter($size, $suffix = "B", $factor = 1)
 	{
-		$size = $size * $factor;
+		$size *= $factor;
 		$units = [
 			'',
 			'K',
@@ -123,6 +127,11 @@ class FroxlorTwig extends AbstractExtension
 	public function getSetting($setting = null)
 	{
 		return Settings::Get($setting);
+	}
+
+	public function getConfig($config = null)
+	{
+		return Settings::Config($config);
 	}
 
 	public function getLang($identifier = null, array $arguments = [])

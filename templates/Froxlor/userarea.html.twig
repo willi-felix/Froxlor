@@ -19,7 +19,7 @@
 
 	<nav class="navbar navbar-expand-md navbar-light p-0 {% if not block('heading') %}shadow-sm{% endif %}">
 		<div class="container-fluid gx-0">
-			<a class="navbar-brand" href="{{ linker({'section': 'index'}) }}">
+			<a class="navbar-brand {% if block('heading') %}shadow-sm{% endif %}" href="{{ linker({'section': 'index'}) }}">
 				<img src="{{ header_logo }}" alt="" width="auto" height="24" class="d-inline-block align-text-top">
 			</a>
 			<div class="me-3 me-sm-0">
@@ -43,7 +43,7 @@
 				<ul class="navbar-nav ms-auto">
 					{% if call_static('\\Froxlor\\CurrentUser', 'getField', ['switched_user']) is not empty and call_static('\\Froxlor\\CurrentUser', 'getField', ['switched_user']) is iterable %}
 						<a class="nav-link text-success" href="{{ linker({'section': 'index', 'action': 'suback'}) }}">
-							<i class="fa-solid fa-reply me-1"></i> {{ userinfo.switched_user.loginname }}
+							<i class="fa-solid fa-reply me-1"></i><span class="d-none d-xl-inline">{{ userinfo.switched_user.loginname }}</span>
 						</a>
 					{% endif %}
 					{% if userinfo.adminsession == 1 %}
@@ -51,12 +51,12 @@
 					{% endif %}
 					<li class="nav-item">
 						<a class="nav-link" href="{{ linker({'section': 'index'}) }}">
-							{{ lng('panel.dashboard') }}
+							<i class="fa-solid fa-house me-1"></i><span class="d-none d-xl-inline">{{ lng('panel.dashboard') }}</span>
 						</a>
 					</li>
 					<li class="nav-item dropdown">
 						<a class="nav-link dropdown-toggle" href="#" id="navbarOpts" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-							{{ userinfo.loginname }}
+							<i class="fa-solid fa-user me-1"></i><span class="d-none d-xl-inline">{{ userinfo.loginname }}</span>
 						</a>
 						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarOpts">
 							<li>
@@ -85,7 +85,7 @@
 									<a class="dropdown-item" href="{{ linker({'section': 'index', 'page': 'apikeys'}) }}"><i class="fa-solid fa-key"></i> {{ lng('menue.main.apikeys') }}</a>
 								</li>
 								<li>
-									<a class="dropdown-item" href="https://docs.froxlor.org/apiguide/index.html" rel="external" target="_blank"><i class="fa-solid fa-circle-info"></i> {{ lng('menue.main.apihelp') }}</a>
+									<a class="dropdown-item" href="https://docs.froxlor.org/latest/api-guide/" rel="external" target="_blank"><i class="fa-solid fa-circle-info"></i> {{ lng('menue.main.apihelp') }}</a>
 								</li>
 							{% endif %}
 						</ul>
@@ -109,7 +109,7 @@
 
 			<main class="d-flex flex-column flex-grow-1 overflow-auto">
 				{% if block('heading') %}
-					<section class="py-3 px-3 px-lg-5 bg-white shadow-sm border-top d-flex justify-content-between align-items-center">
+					<section class="py-3 px-3 px-lg-5 heading shadow-sm d-flex justify-content-between align-items-center">
 						<div>{% block heading %}{% endblock %}</div>
 						<div>{% block actions %}{% endblock %}</div>
 					</section>

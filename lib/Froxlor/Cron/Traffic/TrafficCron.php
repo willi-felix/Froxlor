@@ -78,7 +78,7 @@ class TrafficCron extends FroxlorCron
 				// Fork failed
 				return 1;
 			}
-		} else {
+		} else if (!defined('CRON_NOFORK_FLAG')) {
 			if (extension_loaded('pcntl')) {
 				$msg = "PHP compiled with pcntl but pcntl_fork function is not available.";
 			} else {
@@ -185,6 +185,8 @@ class TrafficCron extends FroxlorCron
 		$current_stamp = time();
 		$current_year = date('Y', $current_stamp);
 		$current_month = date('m', $current_stamp);
+		// @todo locale?
+		$current_month_short = date('M', $current_stamp);
 		$current_day = date('d', $current_stamp);
 
 		while ($row = $result_stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -215,11 +217,17 @@ class TrafficCron extends FroxlorCron
 				$httptraffic = 0;
 				reset($domainlist[$row['customerid']]);
 
+				$statsTool = Settings::Get('system.traffictool');
+
 				if (isset($speciallogfile_domainlist[$row['customerid']]) && is_array($speciallogfile_domainlist[$row['customerid']]) && count($speciallogfile_domainlist[$row['customerid']]) != 0) {
 					reset($speciallogfile_domainlist[$row['customerid']]);
-					if (Settings::Get('system.awstats_enabled') == '0') {
+					if ($statsTool != 'awstats') {
 						foreach ($speciallogfile_domainlist[$row['customerid']] as $domainid => $domain) {
-							$httptraffic += floatval(self::callWebalizerGetTraffic($row['loginname'] . '-' . $domain, $row['documentroot'] . '/webalizer/' . $domain . '/', $domain, $domainlist[$row['customerid']]));
+							if ($statsTool == 'goaccess') {
+								$httptraffic += floatval(self::callGoaccessGetTraffic($row['customerid'], $row['loginname'] . '-' . $domain, $row['documentroot'] . '/goaccess/' . $domain . '/', $domain, ['month' => $current_month_short, 'year' => $current_year], $current_stamp));
+							} else {
+								$httptraffic += floatval(self::callWebalizerGetTraffic($row['loginname'] . '-' . $domain, $row['documentroot'] . '/webalizer/' . $domain . '/', $domain, $domainlist[$row['customerid']]));
+							}
 						}
 					}
 				}
@@ -230,8 +238,10 @@ class TrafficCron extends FroxlorCron
 				// *not* also in the special-logfiles-loop, because the function
 				// will iterate through all customer-domains and the awstats-configs
 				// know the logfile-name, #246
-				if (Settings::Get('system.awstats_enabled') == '1') {
+				if ($statsTool == 'awstats') {
 					$httptraffic += floatval(self::callAwstatsGetTraffic($row['customerid'], $row['documentroot'] . '/awstats/', $domainlist[$row['customerid']], $current_stamp));
+				} elseif ($statsTool == 'goaccess') {
+					$httptraffic += floatval(self::callGoaccessGetTraffic($row['customerid'], $row['loginname'], $row['documentroot'] . '/goaccess/', $caption, ['month' => $current_month_short, 'year' => $current_year], $current_stamp));
 				} else {
 					$httptraffic += floatval(self::callWebalizerGetTraffic($row['loginname'], $row['documentroot'] . '/webalizer/', $caption, $domainlist[$row['customerid']]));
 				}
@@ -609,18 +619,96 @@ class TrafficCron extends FroxlorCron
 	}
 
 	/**
+	 * Run goaccess to create statistics and return used traffic since last run
+	 *
+	 * @param int $customerid
+	 * @param string $logfile Name of logfile
+	 * @param string $outputdir Place where stats should be build
+	 * @param string $caption Caption for webalizer output
+	 * @param array $monthyear_arr
+	 * @param int $current_stamp
+	 * 
+	 * @return int Used traffic
+	 */
+	private static function callGoaccessGetTraffic($customerid, $logfile, $outputdir, $caption, array $monthyear_arr = [], int $current_stamp = 0)
+	{
+		$returnval = 0;
+
+		$logfile = FileDir::makeCorrectFile(Settings::Get('system.logfiles_directory') . $logfile . '-access.log');
+		if (file_exists($logfile)) {
+			$outputdir = FileDir::makeCorrectDir($outputdir);
+			if (!file_exists($outputdir)) {
+				FileDir::safe_exec('mkdir -p ' . escapeshellarg($outputdir));
+			}
+
+			if (file_exists($outputdir . '.tmp.json')) {
+				@unlink($outputdir . '.tmp.json');
+			}
+
+			// goaccess <1.4
+			$keep_params = '--keep-db-files --load-from-disk';
+			$res = FileDir::safe_exec('goaccess --version');
+			$ver_str = array_shift($res);
+			$cGoVer = substr($ver_str, strrpos($ver_str, " ") + 1, -1);
+			if (version_compare($cGoVer, '1.4', '>=')) {
+				// at least 1.4
+				$keep_params = '--persist --restore';
+			}
+
+			$format = Settings::Get('system.logfiles_type') == '2' ? 'VCOMBINED' : 'COMBINED';
+			$monthyear = $monthyear_arr['month'] . '/' . $monthyear_arr['year'];
+			$return_value = false;
+			FileDir::safe_exec("grep '" . $monthyear . "' " . escapeshellarg($logfile) . " | goaccess " . $keep_params . " --db-path=" . escapeshellarg($outputdir) . " -o " . escapeshellarg($outputdir . '.tmp.json') . " -o " . escapeshellarg($outputdir . 'index.html') . " --html-report-title=" . escapeshellarg($caption) . " --log-format=" . $format . " - ", $return_value, ['|']);
+
+			if (file_exists($outputdir . '.tmp.json')) {
+				// need jq here because of potentially LARGE json files
+				$returnval = FileDir::safe_exec("jq -c '.general.bandwidth' " . escapeshellarg($outputdir . '.tmp.json'));
+				$returnval = array_shift($returnval);
+				// return KB as the others two do
+				$returnval = floatval($returnval / 1024);
+				@unlink($outputdir . '.tmp.json');
+			}
+		}
+
+		if ($returnval > 0) {
+			/**
+			 * now, because this traffic is being saved daily, we have to
+			 * subtract the values from all the month's values to return
+			 * a sane value for our panel_traffic and to remain the whole stats
+			 * (awstats overwrites the customers .html stats-files)
+			 */
+			if ($customerid !== false) {
+				$result_stmt = Database::prepare("
+					SELECT SUM(`http`) as `trafficmonth` FROM `" . TABLE_PANEL_TRAFFIC . "`
+					WHERE `customerid` = :customerid
+					AND `year` = :year AND `month` = :month
+				");
+				$result_data = [
+					'customerid' => $customerid,
+					'year' => date('Y', $current_stamp),
+					'month' => date('m', $current_stamp)
+				];
+				$result = Database::pexecute_first($result_stmt, $result_data);
+
+				if (is_array($result) && isset($result['trafficmonth'])) {
+					$returnval = ($returnval - floatval($result['trafficmonth']));
+				}
+			}
+		}
+		return $returnval;
+	}
+
+	/**
 	 * Function which make webalizer statistics and returns used traffic since last run
 	 *
-	 * @param
-	 *            string Name of logfile
-	 * @param
-	 *            string Place where stats should be build
-	 * @param
-	 *            string Caption for webalizer output
-	 * @return int Used traffic
-	 * @author Florian Lippert <flo@syscp.org> (2003-2009)
+	 * @param string $logfile Name of logfile
+	 * @param string $outputdir Place where stats should be build
+	 * @param string $caption Caption for webalizer output
+	 * @param array $usersdomainlist
+	 * 
+	 * @return float Used traffic
 	 */
-	private static function callWebalizerGetTraffic($logfile, $outputdir, $caption, $usersdomainlist)
+	private static function callWebalizerGetTraffic($logfile, $outputdir, $caption, array $usersdomainlist = [])
 	{
 		$returnval = 0;
 
@@ -738,7 +826,7 @@ class TrafficCron extends FroxlorCron
 			// as we check for the config-model awstats will only parse
 			// 'real' domains and no subdomains which are aliases in the
 			// model-config-file.
-			$returnval += self::awstatsDoSingleDomain($singledomain, $outputdir);
+			$returnval += self::awstatsDoSingleDomain($singledomain, $outputdir, $current_stamp);
 		}
 
 		/**
@@ -774,7 +862,7 @@ class TrafficCron extends FroxlorCron
 		return floatval($returnval);
 	}
 
-	private static function awstatsDoSingleDomain($domain, $outputdir)
+	private static function awstatsDoSingleDomain($domain, $outputdir, $current_stamp)
 	{
 		$returnval = 0;
 
@@ -799,7 +887,7 @@ class TrafficCron extends FroxlorCron
 			}
 
 			FroxlorLogger::getInstanceOf()->logAction(FroxlorLogger::CRON_ACTION, LOG_INFO, "Running awstats_buildstaticpages.pl for domain '" . $domain . "' (Output: '" . $staticOutputdir . "')");
-			FileDir::safe_exec($awbsp . ' -awstatsprog=' . escapeshellarg($awprog) . ' -update -month=' . date('m') . ' -year=' . date('Y') . ' -config=' . $domain . ' -dir=' . escapeshellarg($staticOutputdir));
+			FileDir::safe_exec($awbsp . ' -awstatsprog=' . escapeshellarg($awprog) . ' -update -month=' . date('m', $current_stamp) . ' -year=' . date('Y', $current_stamp) . ' -config=' . $domain . ' -dir=' . escapeshellarg($staticOutputdir));
 
 			// update our awstats index files
 			self::awstatsGenerateIndex($domain, $outputdir);

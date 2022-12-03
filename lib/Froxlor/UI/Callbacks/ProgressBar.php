@@ -25,8 +25,11 @@
 
 namespace Froxlor\UI\Callbacks;
 
+use Exception;
+use Froxlor\Traffic\Traffic;
 use Froxlor\PhpHelper;
 use Froxlor\Settings;
+use Froxlor\UI\Response;
 
 class ProgressBar
 {
@@ -89,6 +92,37 @@ class ProgressBar
 	 */
 	public static function traffic(array $attributes): array
 	{
-		return self::pbData('traffic', $attributes['fields'], 1024, (int)Settings::Get('system.report_trafficmax'));
+		$skip_customer_traffic = false;
+		try {
+			$result = Traffic::getCustomerStats($attributes['fields'], 'currentmonth');
+		} catch (Exception $e) {
+			if ($e->getCode() === 405) {
+				$skip_customer_traffic = true;
+			} else {
+				Response::dynamicError($e->getMessage());
+			}
+		}
+		$infotext = null;
+		if (isset($result['metrics']['http']) && !$skip_customer_traffic) {
+			$infotext = lng('panel.used') . ':' . PHP_EOL;
+			$infotext .= 'http: ' . PhpHelper::sizeReadable($result['metrics']['http'], null, 'bi') . PHP_EOL;
+			$infotext .= 'ftp: ' . PhpHelper::sizeReadable($result['metrics']['ftp'], null, 'bi') . PHP_EOL;
+			$infotext .= 'mail: ' . PhpHelper::sizeReadable($result['metrics']['mail'], null, 'bi');
+		}
+		return self::pbData('traffic', $attributes['fields'], 1024, (int)Settings::Get('system.report_trafficmax'), $infotext);
+	}
+
+	/**
+	 * get progressbar data for traffic for the admin overview
+	 * (key is to set 'adminsession' for the admin-users so the traffic-API selects
+	 * the correct customer data for the corresponsing admin/reseller)
+	 *
+	 * @param array $attributes ['fields']
+	 * @return array
+	 */
+	public static function traffic_admins(array $attributes): array
+	{
+		$attributes['fields']['adminsession'] = 1;
+		return self::traffic($attributes);
 	}
 }

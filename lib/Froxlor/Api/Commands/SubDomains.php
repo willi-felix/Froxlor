@@ -62,7 +62,7 @@ class SubDomains extends ApiCommand implements ResourceEntity
 	 *            optional, overwrites path value with an URL to generate a redirect, alternatively use the path
 	 *            parameter also for URLs
 	 * @param int $openbasedir_path
-	 *            optional, either 0 for domains-docroot or 1 for customers-homedir
+	 *            optional, either 0 for domains-docroot, 1 for customers-homedir or 2 for parent-directory of domains-docroot
 	 * @param int $phpsettingid
 	 *            optional, php-settings-id, if empty the $domain value is used
 	 * @param int $redirectcode
@@ -95,7 +95,7 @@ class SubDomains extends ApiCommand implements ResourceEntity
 	 */
 	public function add()
 	{
-		if ($this->getUserDetail('subdomains_used') < $this->getUserDetail('subdomains') || $this->getUserDetail('subdomains') == '-1') {
+		if (($this->getUserDetail('subdomains_used') < $this->getUserDetail('subdomains') || $this->getUserDetail('subdomains') == '-1') || $this->isAdmin()) {
 			// parameters
 			$subdomain = $this->getParam('subdomain');
 			$domain = $this->getParam('domain');
@@ -202,7 +202,7 @@ class SubDomains extends ApiCommand implements ResourceEntity
 			$_doredirect = false;
 			$path = $this->validateDomainDocumentRoot($path, $url, $customer, $completedomain, $_doredirect);
 
-			if ($openbasedir_path != 1) {
+			if ($openbasedir_path > 2 && $openbasedir_path < 0) {
 				$openbasedir_path = 0;
 			}
 
@@ -583,7 +583,7 @@ class SubDomains extends ApiCommand implements ResourceEntity
 	 * @param bool $isemaildomain
 	 *            optional
 	 * @param int $openbasedir_path
-	 *            optional, either 0 for domains-docroot or 1 for customers-homedir
+	 *            optional, either 0 for domains-docroot, 1 for customers-homedir or 2 for parent-directory of domains-docroot
 	 * @param int $phpsettingid
 	 *            optional, php-settings-id, if empty the $domain value is used
 	 * @param int $redirectcode
@@ -629,6 +629,10 @@ class SubDomains extends ApiCommand implements ResourceEntity
 			'domainname' => $domainname
 		]);
 		$id = $result['id'];
+
+		if ($this->isAdmin() == false && (int)$result['caneditdomain'] == 0) {
+			throw new Exception(lng('error.domaincannotbeedited', [$result['domain']]), 406);
+		}
 
 		// parameters
 		$aliasdomain = $this->getParam('alias', true, 0);
@@ -704,7 +708,7 @@ class SubDomains extends ApiCommand implements ResourceEntity
 		}
 
 		// check changes of openbasedir-path variable
-		if ($openbasedir_path != 1) {
+		if ($openbasedir_path > 2 && $openbasedir_path < 0) {
 			$openbasedir_path = 0;
 		}
 
@@ -957,7 +961,7 @@ class SubDomains extends ApiCommand implements ResourceEntity
 			LEFT JOIN `" . TABLE_PANEL_DOMAINS . "` `pd` ON `pd`.`id`=`d`.`parentdomainid`
 			WHERE `d`.`customerid` IN (" . implode(', ', $customer_ids) . ")
 			AND `d`.`email_only` = '0'
-			AND `d`.`id` NOT IN (" . implode(', ', $customer_stdsubs) . ")" . $this->getSearchWhere($query_fields, true) . " GROUP BY `d`.`id` ORDER BY `parentdomainname` " . $this->getOrderBy(true) . $this->getLimit());
+			AND `d`.`id` NOT IN (" . implode(', ', $customer_stdsubs) . ")" . $this->getSearchWhere($query_fields, true) . " GROUP BY `d`.`id` ORDER BY `parentdomainname` ASC, `d`.`parentdomainid` ASC " . $this->getOrderBy(true) . $this->getLimit());
 
 		$result = [];
 		Database::pexecute($domains_stmt, $query_fields, true, true);
