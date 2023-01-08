@@ -216,8 +216,8 @@ class IpsAndPortsTest extends TestCase
 			'id' => 1,
 			'listen_statement' => 0
 		];
-		$this->expectExceptionCode(405);
-		$this->expectExceptionMessage("You cannot access this resource");
+		$this->expectExceptionCode(403);
+		$this->expectExceptionMessage("Not allowed to execute given command.");
 		IpsAndPorts::getLocal($reseller_userdata, $data)->update();
 	}
 
@@ -247,22 +247,6 @@ class IpsAndPortsTest extends TestCase
 		];
 		$this->expectExceptionMessage("You cannot change the last system IP, either create another new IP/Port combination for the system IP or change the system IP.");
 		IpsAndPorts::getLocal($admin_userdata, $data)->update();
-	}
-
-	public function testResellerIpsAndPortsEditNoDuplicate()
-	{
-		global $admin_userdata;
-		$json_result = Admins::getLocal($admin_userdata, array(
-			'loginname' => 'reseller'
-		))->get();
-		$reseller_userdata = json_decode($json_result, true)['data'];
-		$reseller_userdata['adminsession'] = 1;
-		$data = [
-			'id' => 3,
-			'ip' => '82.149.225.46'
-		];
-		$this->expectExceptionMessage("This IP/Port combination already exists.");
-		IpsAndPorts::getLocal($reseller_userdata, $data)->update();
 	}
 
 	public function testAdminIpsAndPortsDeleteCantDeleteDefaultIp()

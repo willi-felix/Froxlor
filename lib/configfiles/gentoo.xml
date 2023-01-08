@@ -1629,12 +1629,12 @@ dovecot_destination_recipient_limit = 1
 
 # Virtual delivery settings
 virtual_mailbox_base = /
-virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual_mailbox_maps.cf
-virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual_mailbox_domains.cf
-virtual_alias_maps = mysql:/etc/postfix/mysql-virtual_alias_maps.cf
-smtpd_sender_login_maps = mysql:/etc/postfix/mysql-virtual_sender_permissions.cf
-virtual_uid_maps = mysql:/etc/postfix/mysql-virtual_uid_maps.cf
-virtual_gid_maps = mysql:/etc/postfix/mysql-virtual_gid_maps.cf
+virtual_mailbox_maps = proxy:mysql:/etc/postfix/mysql-virtual_mailbox_maps.cf
+virtual_mailbox_domains = proxy:mysql:/etc/postfix/mysql-virtual_mailbox_domains.cf
+virtual_alias_maps = proxy:mysql:/etc/postfix/mysql-virtual_alias_maps.cf
+smtpd_sender_login_maps = proxy:mysql:/etc/postfix/mysql-virtual_sender_permissions.cf
+virtual_uid_maps = proxy:mysql:/etc/postfix/mysql-virtual_uid_maps.cf
+virtual_gid_maps = proxy:mysql:/etc/postfix/mysql-virtual_gid_maps.cf
 
 # Local delivery settings
 local_transport = local
@@ -1783,12 +1783,12 @@ dovecot_destination_recipient_limit = 1
 
 # Virtual delivery settings
 virtual_mailbox_base = /
-virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual_mailbox_maps.cf
-virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual_mailbox_domains.cf
-virtual_alias_maps = mysql:/etc/postfix/mysql-virtual_alias_maps.cf
-smtpd_sender_login_maps = mysql:/etc/postfix/mysql-virtual_sender_permissions.cf
-virtual_uid_maps = mysql:/etc/postfix/mysql-virtual_uid_maps.cf
-virtual_gid_maps = mysql:/etc/postfix/mysql-virtual_gid_maps.cf
+virtual_mailbox_maps = proxy:mysql:/etc/postfix/mysql-virtual_mailbox_maps.cf
+virtual_mailbox_domains = proxy:mysql:/etc/postfix/mysql-virtual_mailbox_domains.cf
+virtual_alias_maps = proxy:mysql:/etc/postfix/mysql-virtual_alias_maps.cf
+smtpd_sender_login_maps = proxy:mysql:/etc/postfix/mysql-virtual_sender_permissions.cf
+virtual_uid_maps = proxy:mysql:/etc/postfix/mysql-virtual_uid_maps.cf
+virtual_gid_maps = proxy:mysql:/etc/postfix/mysql-virtual_gid_maps.cf
 
 # Local delivery settings
 local_transport = local
@@ -1923,12 +1923,12 @@ broken_sasl_auth_clients = yes
 
 # Virtual delivery settings
 virtual_mailbox_base = /
-virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual_mailbox_maps.cf
-virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual_mailbox_domains.cf
-virtual_alias_maps = mysql:/etc/postfix/mysql-virtual_alias_maps.cf
-smtpd_sender_login_maps = mysql:/etc/postfix/mysql-virtual_sender_permissions.cf
-virtual_uid_maps = mysql:/etc/postfix/mysql-virtual_uid_maps.cf
-virtual_gid_maps = mysql:/etc/postfix/mysql-virtual_gid_maps.cf
+virtual_mailbox_maps = proxy:mysql:/etc/postfix/mysql-virtual_mailbox_maps.cf
+virtual_mailbox_domains = proxy:mysql:/etc/postfix/mysql-virtual_mailbox_domains.cf
+virtual_alias_maps = proxy:mysql:/etc/postfix/mysql-virtual_alias_maps.cf
+smtpd_sender_login_maps = proxy:mysql:/etc/postfix/mysql-virtual_sender_permissions.cf
+virtual_uid_maps = proxy:mysql:/etc/postfix/mysql-virtual_uid_maps.cf
+virtual_gid_maps = proxy:mysql:/etc/postfix/mysql-virtual_gid_maps.cf
 
 # Local delivery settings
 local_transport = local
@@ -3581,7 +3581,7 @@ MYSQLGetPW      SELECT password FROM ftp_users WHERE username="\L" AND login_ena
 MYSQLGetUID     SELECT uid FROM ftp_users WHERE username="\L" AND login_enabled="y"
 MYSQLGetGID     SELECT gid FROM ftp_users WHERE username="\L" AND login_enabled="y"
 MYSQLGetDir     SELECT homedir FROM ftp_users WHERE username="\L" AND login_enabled="y"
-MySQLGetQTASZ   SELECT panel_customers.diskspace/1024 AS QuotaSize FROM panel_customers, ftp_users WHERE username = "\L" AND panel_customers.loginname = SUBSTRING_INDEX('\L', 'ftp', 1)
+MySQLGetQTASZ   SELECT CASE WHEN panel_customers.diskspace = 0 THEN -1 WHEN panel_customers.diskspace <= -1 THEN 0 ELSE panel_customers.diskspace/1024 END AS QuotaSize FROM panel_customers, ftp_users WHERE username = "\L" AND panel_customers.loginname = SUBSTRING_INDEX('\L', 'ftp', 1)
 ]]>
 						</content>
 					</file>

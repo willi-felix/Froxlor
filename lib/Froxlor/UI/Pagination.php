@@ -63,7 +63,9 @@ class Pagination
 		$this->perPage = $perPage;
 		$this->pageno = 1;
 		// add default limitation by settings
-		$this->addLimit(Settings::Get('panel.paging'));
+		if (Settings::Get('panel.paging') > 0) {
+			$this->addLimit(Settings::Get('panel.paging'));
+		}
 		// check search request
 		$this->searchtext = '';
 		if (count($fields) > 0) {
@@ -205,7 +207,7 @@ class Pagination
 				"total" => $this->entries,
 				"per_page" => $this->perPage,
 				"current_page" => $this->pageno,
-				"last_page" => ceil($this->entries / $this->perPage),
+				"last_page" => (Settings::Get('panel.paging') > 0) ? ceil($this->entries / $this->perPage) : -1,
 				"from" => $this->data['sql_offset'] ?? null,
 				"to" => min($this->data['sql_offset'] + $this->perPage, $this->entries),
 				'sortfields' => array_keys($this->fields),

@@ -54,11 +54,13 @@ return [
 				'label' => lng('ssl_certificates.valid_from'),
 				'field' => 'validfromdate',
 				'searchable' => false,
+				'sortable' => false,
 			],
 			'c.validtodate' => [
 				'label' => lng('ssl_certificates.valid_until'),
 				'field' => 'validtodate',
 				'searchable' => false,
+				'sortable' => false,
 			],
 		],
 		'visible_columns' => Listing::getVisibleColumnsForListing('sslcertificates_list', [
@@ -69,6 +71,17 @@ return [
 			'c.validtodate',
 		]),
 		'actions' => [
+			'edit' => [
+				'icon' => 'fa-solid fa-edit',
+				'title' => lng('panel.edit'),
+				'href' => [
+					'section' => 'domains',
+					'page' => 'domainssleditor',
+					'action' => 'view',
+					'id' => ':domainid'
+				],
+				'visible' => [SSLCertificate::class, 'canEditSSL']
+			],
 			'delete' => [
 				'icon' => 'fa-solid fa-trash',
 				'title' => lng('panel.delete'),

@@ -180,7 +180,8 @@ if (@file_exists('templates/' . $theme . '/config.json')) {
 }
 
 // check for existence of variant in theme
-if (is_array($_themeoptions) && (!array_key_exists('variants', $_themeoptions) || !array_key_exists($themevariant, $_themeoptions['variants']))) {
+if (is_array($_themeoptions) && (!array_key_exists('variants', $_themeoptions) || !array_key_exists($themevariant,
+			$_themeoptions['variants']))) {
 	$themevariant = "default";
 }
 
@@ -297,9 +298,9 @@ UI::twig()->addGlobal('theme_css', $css);
 unset($js);
 unset($css);
 
-$action = Request::get('action');
-$page = Request::get('page', 'overview');
-$gSearchText = Request::get('searchtext');
+$action = Request::any('action');
+$page = Request::any('page', 'overview');
+$gSearchText = Request::any('searchtext');
 
 // clear request data
 if (!$action && isset($_SESSION)) {
@@ -311,7 +312,33 @@ UI::twig()->addGlobal('page', $page);
 UI::twig()->addGlobal('area', AREA);
 UI::twig()->addGlobal('gSearchText', $gSearchText);
 
-/**
- * Initialize the mailingsystem
- */
+// Initialize the mailingsystem
 $mail = new Mailer(true);
+
+// initialize csrf
+if (CurrentUser::hasSession()) {
+	// create new csrf token if not set
+	if (!$csrf_token = CurrentUser::getField('csrf_token')) {
+		$csrf_token = Froxlor::genSessionId(20);
+		CurrentUser::setField('csrf_token', $csrf_token);
+	}
+	// set csrf token for twig
+	UI::twig()->addGlobal('csrf_token', $csrf_token);
+	// check if csrf token is valid
+	if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH', 'DELETE'])) {
+		$current_token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+		if ($current_token != CurrentUser::getField('csrf_token')) {
+			Response::dynamicError('CSRF validation failed');
+		}
+	}
+	// update cookie lifetime
+	$cookie_params = [
+		'expires' => time() + Settings::Get('session.sessiontimeout'),
+		'path' => '/',
+		'domain' => $_SERVER['HTTP_HOST'],
+		'secure' => UI::requestIsHttps(),
+		'httponly' => true,
+		'samesite' => 'Strict'
+	];
+	setcookie(session_name(), $_COOKIE[session_name()], $cookie_params);
+}

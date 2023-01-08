@@ -78,10 +78,7 @@ class UI
 
 	private static $install_mode = false;
 
-	/**
-	 * send various security related headers
-	 */
-	public static function sendHeaders()
+	public static function requestIsHttps(): bool
 	{
 		$isHttps =
 			$_SERVER['HTTPS']
@@ -89,15 +86,18 @@ class UI
 			?? $_SERVER['HTTP_X_FORWARDED_PROTO']
 			?? null;
 
-		$isHttps =
-			$isHttps && (strcasecmp('on', $isHttps) == 0
-				|| strcasecmp('https', $isHttps) == 0
-			);
-
+		return $isHttps && (strcasecmp('on', $isHttps) == 0 || strcasecmp('https', $isHttps) == 0);
+	}
+	/**
+	 * send various security related headers
+	 */
+	public static function sendHeaders()
+	{
 		session_set_cookie_params([
+			'lifetime' => self::$install_mode ? 7200 : 600, // will be renewed based on settings in lib/init.php
 			'path' => '/',
 			'domain' => $_SERVER['HTTP_HOST'],
-			'secure' => $isHttps,
+			'secure' => self::requestIsHttps(),
 			'httponly' => true,
 			'samesite' => 'Strict'
 		]);
@@ -279,11 +279,12 @@ class UI
 			if (Froxlor::versionCompare2(Settings::Get('panel.version'), '2.0.0-beta1') == -1) {
 				// pre 2.0
 				Settings::Set('panel.default_theme', 'Froxlor');
-			}
-			$theme = (Settings::Get('panel.default_theme') !== null) ? Settings::Get('panel.default_theme') : $theme;
-			// customer theme
-			if (CurrentUser::hasSession() && CurrentUser::getField('theme') != $theme) {
-				$theme = CurrentUser::getField('theme');
+			} else {
+				$theme = (Settings::Get('panel.default_theme') !== null) ? Settings::Get('panel.default_theme') : $theme;
+				// customer theme
+				if (CurrentUser::hasSession() && CurrentUser::getField('theme') != $theme) {
+					$theme = CurrentUser::getField('theme');
+				}
 			}
 		}
 		if (!file_exists(Froxlor::getInstallDir() . '/templates/' . $theme)) {

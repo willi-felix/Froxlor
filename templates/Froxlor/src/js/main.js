@@ -5,11 +5,18 @@ import Chart from 'chart.js/auto';
 
 // set jquery & bootstrap & chart
 global.$ = require('jquery');
+global.validation = require('jquery-validation');
 global.bootstrap = require('bootstrap');
 window.Chart = Chart;
 
 $(function () {
 	window.$theme = 'Froxlor';
+
+	$.ajaxSetup({
+		headers: {
+			'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+		}
+	});
 
 	const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
 	const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -21,16 +28,17 @@ $(function () {
 });
 
 // Load components
-require('./components/global')
-require('./components/search')
-require('./components/newsfeed')
-require('./components/updatecheck')
-require('./components/customer')
-require('./components/tablecolumns')
-require('./components/ipsandports')
-require('./components/domains')
-require('./components/configfiles')
 require('./components/apikeys')
-require('./components/install')
+require('./components/configfiles')
+require('./components/customer')
 require('./components/dnseditor')
+require('./components/domains')
+require('./components/global')
+require('./components/install')
+require('./components/ipsandports')
+require('./components/newsfeed')
+require('./components/search')
+require('./components/tablecolumns')
 require('./components/traffic')
+require('./components/updatecheck')
+require('./components/validation')

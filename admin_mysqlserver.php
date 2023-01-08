@@ -36,9 +36,9 @@ use Froxlor\UI\Panel\UI;
 use Froxlor\UI\Request;
 use Froxlor\UI\Response;
 
-$id = (int)Request::get('id');
+$id = (int)Request::any('id');
 
-if ($page == 'mysqlserver' || $page == 'overview') {
+if (($page == 'mysqlserver' || $page == 'overview') && $userinfo['change_serversettings'] == '1') {
 	if ($action == '') {
 		$log->logAction(FroxlorLogger::ADM_ACTION, LOG_NOTICE, "viewed admin_mysqlserver");
 

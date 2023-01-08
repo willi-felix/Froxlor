@@ -40,11 +40,11 @@ use Froxlor\UI\Response;
 use Froxlor\CurrentUser;
 
 // redirect if this customer page is hidden via settings
-if (Settings::IsInList('panel.customer_hide_options', 'ftp')) {
+if (Settings::IsInList('panel.customer_hide_options', 'ftp') || $userinfo['ftps'] == 0) {
 	Response::redirectTo('customer_index.php');
 }
 
-$id = (int)Request::get('id', 0);
+$id = (int)Request::any('id', 0);
 
 if ($page == 'overview' || $page == 'accounts') {
 	if ($action == '') {
