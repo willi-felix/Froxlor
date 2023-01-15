@@ -225,7 +225,7 @@ CREATE TABLE `panel_customers` (
   `allowed_mysqlserver` text NOT NULL,
    PRIMARY KEY  (`customerid`),
    UNIQUE KEY `loginname` (`loginname`)
-) ENGINE=InnoDB CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 
 DROP TABLE IF EXISTS `panel_databases`;
@@ -642,7 +642,7 @@ opcache.validate_timestamps'),
 	('system', 'leprivatekey', 'unset'),
 	('system', 'lepublickey', 'unset'),
 	('system', 'letsencryptca', 'letsencrypt'),
-	('system', 'letsencryptchallengepath', '/var/www/froxlor'),
+	('system', 'letsencryptchallengepath', '/var/www/html/froxlor'),
 	('system', 'letsencryptkeysize', '4096'),
 	('system', 'letsencryptreuseold', 0),
 	('system', 'leenabled', '0'),
@@ -696,7 +696,7 @@ opcache.validate_timestamps'),
 	('system', 'distribution', ''),
 	('system', 'update_channel', 'stable'),
 	('system', 'updatecheck_data', ''),
-	('system', 'update_notify_last', '2.0.3'),
+	('system', 'update_notify_last', '2.0.8'),
 	('system', 'traffictool', 'goaccess'),
 	('api', 'enabled', '0'),
 	('2fa', 'enabled', '1'),
@@ -740,8 +740,8 @@ opcache.validate_timestamps'),
 	('panel', 'logo_overridetheme', '0'),
 	('panel', 'logo_overridecustom', '0'),
 	('panel', 'settings_mode', '0'),
-	('panel', 'version', '2.0.3'),
-	('panel', 'db_version', '202212060');
+	('panel', 'version', '2.0.8'),
+	('panel', 'db_version', '202301120');
 
 
 DROP TABLE IF EXISTS `panel_tasks`;

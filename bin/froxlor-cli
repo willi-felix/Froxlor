@@ -35,6 +35,7 @@ use Froxlor\Cli\UpdateCommand;
 use Froxlor\Cli\InstallCommand;
 use Froxlor\Cli\MasterCron;
 use Froxlor\Cli\UserCommand;
+use Froxlor\Cli\ValidateAcmeWebroot;
 use Froxlor\Froxlor;
 use Froxlor\System\Plugin;
 
@@ -60,6 +61,7 @@ $application->add(new UpdateCommand());
 $application->add(new InstallCommand());
 $application->add(new MasterCron());
 $application->add(new UserCommand());
+$application->add(new ValidateAcmeWebroot());
 
 // check for plugin-defined CLI commmands
 $cliFiles = Plugin::getCliCommands();

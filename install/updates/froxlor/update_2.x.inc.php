@@ -38,10 +38,9 @@ if (!defined('_CRON_UPDATE')) {
 
 // last 0.10.x release
 if (Froxlor::isFroxlorVersion('0.10.38.3')) {
-
 	$update_to = '2.0.0-beta1';
 
-	Update::showUpdateStep("Updating from 0.10.38.3 to ".$update_to, false);
+	Update::showUpdateStep("Updating from 0.10.38.3 to " . $update_to, false);
 
 	Update::showUpdateStep("Removing unused table");
 	Database::query("DROP TABLE IF EXISTS `panel_sessions`;");
@@ -66,8 +65,8 @@ if (Froxlor::isFroxlorVersion('0.10.38.3')) {
 	KEY customerid (customerid)
 	) ENGINE=InnoDB CHARSET=utf8 COLLATE=utf8_general_ci;";
 	Database::query($sql);
-	Database::query("SET SESSION innodb_strict_mode=OFF;");
 	// new customer allowed_mysqlserver field
+	Database::query("ALTER TABLE `" . TABLE_PANEL_CUSTOMERS . "` ROW_FORMAT=DYNAMIC;");
 	Database::query("ALTER TABLE `" . TABLE_PANEL_CUSTOMERS . "` CHANGE COLUMN `customernumber` `customernumber` varchar(100) NOT NULL default '';");
 	Database::query("ALTER TABLE `" . TABLE_PANEL_CUSTOMERS . "` CHANGE COLUMN `allowed_phpconfigs` `allowed_phpconfigs` text NOT NULL;");
 	Database::query("ALTER TABLE `" . TABLE_PANEL_CUSTOMERS . "` ADD `allowed_mysqlserver` text NOT NULL;");
@@ -146,7 +145,7 @@ if (Froxlor::isFroxlorVersion('0.10.38.3')) {
 	}
 
 	Update::showUpdateStep("Adding new settings");
-	$panel_settings_mode = isset($_POST['panel_settings_mode']) ? (int) $_POST['panel_settings_mode'] : 0;
+	$panel_settings_mode = isset($_POST['panel_settings_mode']) ? (int)$_POST['panel_settings_mode'] : 0;
 	Settings::AddNew("panel.settings_mode", $panel_settings_mode);
 	$system_distribution = isset($_POST['system_distribution']) ? $_POST['system_distribution'] : '';
 	Settings::AddNew("system.distribution", $system_distribution);
@@ -183,17 +182,16 @@ if (Froxlor::isFroxlorVersion('0.10.38.3')) {
 	Update::lastStepStatus(0);
 
 	Update::showUpdateStep("Updating email account password-hashes");
-	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password` = REPLACE(`password`, '$1$', '{MD5-CRYPT}$1$') WHERE SUBSTRING(`password`, 1, 3) = '$1$'");
-	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password` = REPLACE(`password`, '$5$', '{SHA256-CRYPT}$5$') WHERE SUBSTRING(`password`, 1, 3) = '$5$'");
-	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password` = REPLACE(`password`, '$6$', '{SHA512-CRYPT}$6$') WHERE SUBSTRING(`password`, 1, 3) = '$6$'");
-	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password` = REPLACE(`password`, '$2y$', '{BLF-CRYPT}$2y$') WHERE SUBSTRING(`password`, 1, 4) = '$2y$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password_enc` = REPLACE(`password_enc`, '$1$', '{MD5-CRYPT}$1$') WHERE SUBSTRING(`password_enc`, 1, 3) = '$1$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password_enc` = REPLACE(`password_enc`, '$5$', '{SHA256-CRYPT}$5$') WHERE SUBSTRING(`password_enc`, 1, 3) = '$5$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password_enc` = REPLACE(`password_enc`, '$6$', '{SHA512-CRYPT}$6$') WHERE SUBSTRING(`password_enc`, 1, 3) = '$6$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password_enc` = REPLACE(`password_enc`, '$2y$', '{BLF-CRYPT}$2y$') WHERE SUBSTRING(`password_enc`, 1, 4) = '$2y$'");
 	Update::lastStepStatus(0);
 
 	Froxlor::updateToVersion($update_to);
 }
 
 if (Froxlor::isDatabaseVersion('202112310')) {
-
 	Update::showUpdateStep("Adjusting traffic tool settings");
 	$traffic_tool = Settings::Get('system.awstats_enabled') == 1 ? 'awstats' : 'webalizer';
 	Settings::AddNew("system.traffictool", $traffic_tool);
@@ -204,20 +202,30 @@ if (Froxlor::isDatabaseVersion('202112310')) {
 }
 
 if (Froxlor::isDatabaseVersion('202211030')) {
-
 	Update::showUpdateStep("Creating backward compatibility for cronjob");
-	$complete_filedir = Froxlor::getInstallDir() . '/scripts';
-	mkdir($complete_filedir, 0750, true);
-	$newCronBin = Froxlor::getInstallDir().'/bin/froxlor-cli';
-	$compCron = <<<EOF
+	$disabled = explode(',', ini_get('disable_functions'));
+	$exec_allowed = !in_array('exec', $disabled);
+	// check whether old files could be deleted in previous updates and if not,
+	// user should run cron to regenerate cron.d-file manually as he will run
+	// the other commands manually only after the update so this file would be deleted too
+	if ($exec_allowed) {
+		$complete_filedir = Froxlor::getInstallDir() . '/scripts';
+		mkdir($complete_filedir, 0750, true);
+		$newCronBin = Froxlor::getInstallDir() . '/bin/froxlor-cli';
+		$compCron = <<<EOF
 <?php
-chmod($newCronBin, 0755);
+chmod('$newCronBin', 0755);
 // re-create cron.d configuration file
 exec('$newCronBin froxlor:cron -r 99');
 exit;
 EOF;
-	file_put_contents($complete_filedir.'/froxlor_master_cronjob.php', $compCron);
-	Update::lastStepStatus(0);
+		file_put_contents($complete_filedir . '/froxlor_master_cronjob.php', $compCron);
+		Update::lastStepStatus(0);
+	} else {
+		$cron_run_cmd = 'chmod +x ' . FileDir::makeCorrectFile(Froxlor::getInstallDir() . '/bin/froxlor-cli') . PHO_EOL;
+		$cron_run_cmd .= FileDir::makeCorrectFile(Froxlor::getInstallDir() . '/bin/froxlor-cli') . ' froxlor:cron -r 99';
+		Update::lastStepStatus(1, 'manual commands needed', 'Please run the following commands manually:<br><pre>' . $cron_run_cmd . '</pre>');
+	}
 
 	Froxlor::updateToDbVersion('202212060');
 }
@@ -250,4 +258,89 @@ if (Froxlor::isFroxlorVersion('2.0.1')) {
 if (Froxlor::isFroxlorVersion('2.0.2')) {
 	Update::showUpdateStep("Updating from 2.0.2 to 2.0.3", false);
 	Froxlor::updateToVersion('2.0.3');
+}
+
+if (Froxlor::isFroxlorVersion('2.0.3')) {
+	Update::showUpdateStep("Updating from 2.0.3 to 2.0.4", false);
+
+	$complete_filedir = Froxlor::getInstallDir() . '/scripts';
+	// check if compat. cronjob still exists (most likely didn't run successfully b/c of error from former 2.0 release)
+	if (@file_exists($complete_filedir . '/froxlor_master_cronjob.php')) {
+		Update::showUpdateStep("Adjusting backward compatibility for cronjob");
+		$disabled = explode(',', ini_get('disable_functions'));
+		$exec_allowed = !in_array('exec', $disabled);
+		if ($exec_allowed) {
+			$newCronBin = Froxlor::getInstallDir() . '/bin/froxlor-cli';
+			$compCron = <<<EOF
+<?php
+chmod('$newCronBin', 0755);
+// re-create cron.d configuration file
+exec('$newCronBin froxlor:cron -r 99');
+exit;
+EOF;
+			file_put_contents($complete_filedir . '/froxlor_master_cronjob.php', $compCron);
+			Update::lastStepStatus(0);
+		} else {
+			$cron_run_cmd = 'chmod +x ' . FileDir::makeCorrectFile(Froxlor::getInstallDir() . '/bin/froxlor-cli') . PHO_EOL;
+			$cron_run_cmd .= FileDir::makeCorrectFile(Froxlor::getInstallDir() . '/bin/froxlor-cli') . ' froxlor:cron -r 99';
+			Update::lastStepStatus(1, 'manual commands needed', 'Please run the following commands manually:<br><pre>' . $cron_run_cmd . '</pre>');
+		}
+	}
+	Froxlor::updateToVersion('2.0.4');
+}
+
+if (Froxlor::isFroxlorVersion('2.0.4')) {
+	Update::showUpdateStep("Updating from 2.0.4 to 2.0.5", false);
+	Froxlor::updateToVersion('2.0.5');
+}
+
+if (Froxlor::isFroxlorVersion('2.0.5')) {
+	Update::showUpdateStep("Updating from 2.0.5 to 2.0.6", false);
+
+	Update::showUpdateStep("Updating possible missing email account password-hashes");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password_enc` = REPLACE(`password_enc`, '$1$', '{MD5-CRYPT}$1$') WHERE SUBSTRING(`password_enc`, 1, 3) = '$1$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password_enc` = REPLACE(`password_enc`, '$5$', '{SHA256-CRYPT}$5$') WHERE SUBSTRING(`password_enc`, 1, 3) = '$5$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password_enc` = REPLACE(`password_enc`, '$6$', '{SHA512-CRYPT}$6$') WHERE SUBSTRING(`password_enc`, 1, 3) = '$6$'");
+	Database::query("UPDATE `" . TABLE_MAIL_USERS . "` SET `password_enc` = REPLACE(`password_enc`, '$2y$', '{BLF-CRYPT}$2y$') WHERE SUBSTRING(`password_enc`, 1, 4) = '$2y$'");
+	Update::lastStepStatus(0);
+
+	Froxlor::updateToVersion('2.0.6');
+}
+
+if (Froxlor::isFroxlorVersion('2.0.6')) {
+	Update::showUpdateStep("Updating from 2.0.6 to 2.0.7", false);
+
+	Update::showUpdateStep("Correcting allowed_mysqlserver for customers");
+	Database::query("UPDATE `" . TABLE_PANEL_CUSTOMERS . "` SET `allowed_mysqlserver` = '[0]' WHERE `allowed_mysqlserver` = ''");
+	Update::lastStepStatus(0);
+
+	Froxlor::updateToVersion('2.0.7');
+}
+
+if (Froxlor::isDatabaseVersion('202212060')) {
+	Update::showUpdateStep("Validating acme.sh challenge path");
+	$acmesh_challenge_dir = Settings::Get('system.letsencryptchallengepath');
+	$system_letsencryptchallengepath_upd = isset($_POST['system_letsencryptchallengepath_upd']) ? $_POST['system_letsencryptchallengepath_upd'] : $acmesh_challenge_dir;
+	if ($acmesh_challenge_dir != $system_letsencryptchallengepath_upd) {
+		Settings::Set('system.letsencryptchallengepath', $system_letsencryptchallengepath_upd);
+		Update::lastStepStatus(1, 'manual commands needed', 'Please reconfigure webserver service using <pre>bin/froxlor-cli froxlor:config-services</pre> or adjust the path manually in <pre>' . Settings::Get('system.letsencryptacmeconf') . '</pre>');
+	} else {
+		Update::lastStepStatus(0);
+	}
+
+	Froxlor::updateToDbVersion('202301120');
+}
+
+if (Froxlor::isFroxlorVersion('2.0.7')) {
+	Update::showUpdateStep("Updating from 2.0.7 to 2.0.8", false);
+
+	// adjust file-logging to be set to froxlor/logs/
+	$logtypes = explode(',', Settings::Get('logger.logtypes'));
+	if (in_array('file', $logtypes)) {
+		Update::showUpdateStep("Adjusting froxlor logfile for system-logging to be stored in logs/froxlor.log");
+		Settings::Set('logger.logfile', 'froxlor.log');
+		Update::lastStepStatus(0);
+	}
+
+	Froxlor::updateToVersion('2.0.8');
 }

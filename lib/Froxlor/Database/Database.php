@@ -28,6 +28,7 @@ namespace Froxlor\Database;
 use Exception;
 use Froxlor\FileDir;
 use Froxlor\Froxlor;
+use Froxlor\PhpHelper;
 use Froxlor\Settings;
 use Froxlor\UI\Panel\UI;
 use PDO;
@@ -78,6 +79,8 @@ class Database
 	private static $needsqldata = false;
 
 	private static $sqldata = null;
+
+	private static $need_dbname = true;
 
 	/**
 	 * Wrapper for PDOStatement::execute so we can catch the PDOException
@@ -135,7 +138,7 @@ class Database
 		require Froxlor::getInstallDir() . "/lib/userdata.inc.php";
 
 		// le format
-		if (isset($sql['root_user']) && isset($sql['root_password']) && !is_array($sql_root)) {
+		if (isset($sql['root_user']) && isset($sql['root_password']) && empty($sql_root)) {
 			$sql_root = [
 				0 => [
 					'caption' => 'Default',
@@ -145,12 +148,20 @@ class Database
 					'password' => $sql['root_password']
 				]
 			];
+			unset($sql['root_user']);
+			unset($sql['root_password']);
+			// write new layout so this won't happen again
+			self::generateNewUserData($sql, $sql_root);
+			// re-read file
+			require Froxlor::getInstallDir() . "/lib/userdata.inc.php";
 		}
 
 		$substitutions = [
 			$sql['password'] => 'DB_UNPRIV_PWD',
-			$sql_root[0]['password'] => 'DB_ROOT_PWD'
 		];
+		foreach ($sql_root as $dbserver => $sql_root_data) {
+			$substitutions[$sql_root_data[$dbserver]]['password'] = 'DB_ROOT_PWD';
+		}
 
 		// hide username/password in messages
 		$error_message = $error->getMessage();
@@ -341,12 +352,13 @@ class Database
 	 * @param int $dbserver
 	 *            optional
 	 */
-	public static function needRoot($needroot = false, $dbserver = 0)
+	public static function needRoot(bool $needroot = false, int $dbserver = 0, bool $need_db = true)
 	{
 		// force re-connecting to the db with corresponding user
 		// and set the $dbserver (mostly to 0 = default)
 		self::setServer($dbserver);
 		self::$needroot = $needroot;
+		self::$need_dbname = $need_db;
 	}
 
 	/**
@@ -405,7 +417,7 @@ class Database
 		require Froxlor::getInstallDir() . "/lib/userdata.inc.php";
 
 		// le format
-		if (self::$needroot == true && isset($sql['root_user']) && isset($sql['root_password']) && (!isset($sql_root) || !is_array($sql_root))) {
+		if (isset($sql['root_user']) && isset($sql['root_password']) && (!isset($sql_root) || !is_array($sql_root))) {
 			$sql_root = [
 				0 => [
 					'caption' => 'Default',
@@ -417,6 +429,10 @@ class Database
 			];
 			unset($sql['root_user']);
 			unset($sql['root_password']);
+			// write new layout so this won't happen again
+			self::generateNewUserData($sql, $sql_root);
+			// re-read file
+			require Froxlor::getInstallDir() . "/lib/userdata.inc.php";
 		}
 
 		// either root or unprivileged user
@@ -465,10 +481,11 @@ class Database
 			'ATTR_ERRMODE' => 'ERRMODE_EXCEPTION'
 		];
 
-		$dbconf["dsn"] = [
-			'dbname' => $sql["db"],
-			'charset' => 'utf8'
-		];
+		$dbconf["dsn"] = ['charset' => 'utf8'];
+
+		if (self::$need_dbname) {
+			$dbconf["dsn"]['dbname'] = $sql["db"];
+		}
 
 		if ($socket != null) {
 			$dbconf["dsn"]['unix_socket'] = FileDir::makeCorrectFile($socket);
@@ -577,5 +594,23 @@ class Database
 			self::showerror($e);
 		}
 		return $result;
+	}
+
+	/**
+	 * write new userdata.inc.php file
+	 */
+	private static function generateNewUserData(array $sql, array $sql_root)
+	{
+		$content = PhpHelper::parseArrayToPhpFile(
+			['sql' => $sql, 'sql_root' => $sql_root],
+			'automatically generated userdata.inc.php for froxlor'
+		);
+		chmod(Froxlor::getInstallDir() . "/lib/userdata.inc.php", 0700);
+		file_put_contents(Froxlor::getInstallDir() . "/lib/userdata.inc.php", $content);
+		chmod(Froxlor::getInstallDir() . "/lib/userdata.inc.php", 0400);
+		clearstatcache();
+		if (function_exists('opcache_invalidate')) {
+			@opcache_invalidate(Froxlor::getInstallDir() . "/lib/userdata.inc.php", true);
+		}
 	}
 }
