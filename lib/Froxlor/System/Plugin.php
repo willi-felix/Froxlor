@@ -128,7 +128,7 @@ class Plugin
 	 */
 	public function isInstalled(): bool
 	{
-		$installed = Settings::Get($this->getPluginBasename() . '.is_installed');
+		$installed = file_exists(Froxlor::getInstallDir() . '/lib/userdata.inc.php') && Settings::Get($this->getPluginBasename() . '.is_installed');
 		return !empty($installed);
 	}
 
@@ -138,7 +138,7 @@ class Plugin
 	 */
 	public function isActive(): bool
 	{
-		$active = Settings::Get($this->getPluginBasename() . '.is_active');
+		$active = file_exists(Froxlor::getInstallDir() . '/lib/userdata.inc.php') && Settings::Get($this->getPluginBasename() . '.is_active');
 		return !empty($active);
 	}
 
