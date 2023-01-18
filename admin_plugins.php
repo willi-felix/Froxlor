@@ -32,9 +32,10 @@ use Froxlor\UI\Listing;
 use Froxlor\System\Plugin;
 use Froxlor\UI\Response;
 use Froxlor\UI\Request;
+use Froxlor\Settings;
 
 // check for plugins to be enabled
-if (Settings::Config('enable_plugins') != true) {
+if (!Settings::Config('enable_plugins')) {
 	Response::standardError('pluginsdisabled');
 }
 
@@ -109,7 +110,7 @@ if ($page == 'overview') {
 		$plugin_list_data = include_once __DIR__ . '/lib/tablelisting/admin/tablelisting.plugins.php';
 
 		$template = 'user/table.html.twig';
-		$params['listing'] = Listing::formatFromArray($plugins, $plugin_list_data['plugin_list']);
+		$params['listing'] = Listing::formatFromArray($plugins, $plugin_list_data['plugin_list'], 'plugin_list');
 		if (!empty($plugin_errors)) {
 			$template = 'user/table-note.html.twig';
 			$params['type'] = 'warning';
