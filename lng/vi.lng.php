@@ -19,7 +19,7 @@
  * https://files.froxlor.org/misc/COPYING.txt
  *
  * @copyright  the authors
- * @author     Froxlor team <team@froxlor.org>
+ * @author     HBachh <demo3546.vn@gmail.com>
  * @license    https://files.froxlor.org/misc/COPYING.txt GPLv2
  */
 
